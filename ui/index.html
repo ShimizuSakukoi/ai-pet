@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!--
+  AI Pet — 桌面宠物主页面
+  ============================================================
+  浮动图层架构：
+    - 模型面板（.model-area）：Live2D 角色，absolute 定位，可拖拽
+    - 聊天面板（.chat-section）：对话窗口，absolute 定位，标题栏拖拽，右下角缩放
+    - 面板 z-index 竞争，点击自动提至最前
+    - body.pet-mode CSS class 控制聊天面板显隐
+
+  状态管理：
+    - 首次加载 → 显示设置面板
+    - 设置保存后 → 初始化 Agent → 打开聊天
+    - 下次启动 → 自动加载已保存设置 → 跳过设置面板
+
+  脚本加载顺序（重要！）：
+    1. L2Dwidget.min.js — Live2D 渲染库（本地化，不依赖 CDN）
+    2. live2d.js       — 模型加载/切换/情绪映射
+    3. bridge.js       — 前后端通信封装
+    4. ui.js           — UI 交互控制器（最后加载，依赖前三个）
+-->
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Pet</title>
+    <link rel="stylesheet" href="css/pet.css" />
+</head>
+<body class="pet-mode">
+
+    <!-- ====== 模型面板（浮动层，可拖拽） ====== -->
+    <div class="model-area" id="model-area">
+        <canvas id="live2d-canvas"></canvas>
+        <div class="mood-tag">🐱 普通</div>
+    </div>
+
+    <!-- ====== 聊天面板（浮动窗口，可拖拽/缩放） ====== -->
+    <div class="chat-section" id="chat-section">
+        <!-- 标题栏（拖拽把手） -->
+        <div class="chat-header" id="chat-header">
+            <span>💬 聊天</span>
+            <div class="chat-header-btns">
+                <button id="btn-chat-close" title="关闭聊天">✕</button>
+            </div>
+        </div>
+
+        <!-- 功能按钮栏 -->
+        <div class="chat-toolbar">
+            <button id="btn-new-chat" title="新对话">💬 新对话</button>
+            <span class="tb-sep"></span>
+            <button id="btn-settings" title="设置">⚙ 设置</button>
+            <button id="btn-memories" title="记忆管理">📋 记忆</button>
+            <button id="btn-reset" title="清除所有记忆">🗑 清除</button>
+            <span class="tb-sep"></span>
+            <button id="btn-model-prev">◀</button>
+            <button id="btn-model-name" class="model-name-btn">haru</button>
+            <button id="btn-model-next">▶</button>
+            <span class="tb-spacer"></span>
+            <button id="btn-speak-toggle" title="语音">🔇</button>
+            <button id="btn-minimize" title="最小化">_</button>
+            <button id="btn-quit" title="退出">✕</button>
+        </div>
+
+        <!-- 聊天记录 -->
+        <div class="chat-area" id="chat-area">
+            <div class="message system">⚡ 点击右下 💬 打开聊天</div>
+        </div>
+
+        <!-- 快捷回复 -->
+        <div class="quick-replies" id="quick-replies">
+            <button data-text="在干嘛喵？">在干嘛喵？</button>
+            <button data-text="摸摸头">摸摸头</button>
+            <button data-text="饿了吗">饿了吗</button>
+            <button data-text="不理你了">不理你了</button>
+            <button data-text="讲个笑话">讲个笑话</button>
+            <button data-text="晚安">晚安</button>
+        </div>
+
+        <!-- 输入区 -->
+        <div class="input-area">
+            <button id="btn-voice" title="语音输入" class="voice-btn">🎤</button>
+            <input type="text" id="chat-input" placeholder="说点什么..." />
+            <button class="send-btn" id="send-btn">发送</button>
+        </div>
+
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <span>好感度:
+                <span class="friendship-bg">
+                    <span id="friendship-bar" class="friendship-fill"></span>
+                </span>
+            </span>
+            <span>记忆: <span id="mem-count">0</span> 条</span>
+            <span class="tts-status" id="tts-status">TTS:待接入</span>
+        </div>
+
+        <!-- 缩放把手 -->
+        <div class="resize-handle" id="resize-handle"></div>
+    </div>
+
+    <!-- 聊天切换按钮（pet-mode 时可见） -->
+    <button class="chat-toggle-btn" id="chat-toggle-btn" title="打开聊天">💬</button>
+
+    <!-- 记忆管理面板 -->
+    <div class="mem-overlay" id="mem-overlay" style="display:none;">
+        <div class="mem-panel">
+            <div class="mem-header">
+                <h3>🧠 记忆管理</h3>
+                <button id="mem-btn-close" class="mem-close">✕</button>
+            </div>
+            <div class="mem-list" id="mem-list"></div>
+            <div class="mem-edit-area hidden" id="mem-edit-area">
+                <textarea id="mem-edit-input" maxlength="200" placeholder="修改记忆内容..."></textarea>
+                <div class="mem-edit-actions">
+                    <button id="mem-btn-save" class="btn-mem-save">保存</button>
+                    <button id="mem-btn-cancel" class="btn-mem-cancel">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置面板 -->
+    <div class="setup-overlay" id="setup-overlay">
+        <div class="setup-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; -webkit-app-region: drag;">
+                <h2 style="margin: 0;">🐱 AI Pet 设置</h2>
+                <button id="setup-btn-close" title="关闭"
+                        style="background: none; border: 1px solid #333; color: #aaa;
+                               border-radius: 4px; cursor: pointer; font-size: 16px;
+                               padding: 2px 8px; -webkit-app-region: no-drag;">✕</button>
+            </div>
+            <p class="subtitle" id="setup-subtitle">首次使用，请配置 LLM 连接</p>
+            <div id="setup-step-llm">
+                <label>API 提供商</label>
+                <select id="setup-provider">
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="custom">自定义</option>
+                </select>
+                <label>API Key</label>
+                <div class="key-input-row">
+                    <input type="password" id="setup-apikey" placeholder="sk-..." />
+                    <button type="button" class="toggle-key-btn" id="btn-toggle-key">👁</button>
+                </div>
+                <div id="setup-url-group" class="hidden">
+                    <label>API 地址</label>
+                    <input type="text" id="setup-baseurl" placeholder="https://api.openai.com/v1" />
+                </div>
+                <label>模型</label>
+                <select id="setup-model"></select>
+                <button id="setup-btn-test" class="btn-secondary">🔌 测试连接</button>
+                <div class="test-result" id="setup-test-result"></div>
+                <hr class="setup-divider" />
+                <label>宠物名字</label>
+                <input type="text" id="setup-name" placeholder="小橘" value="小橘" maxlength="10" />
+                <label>宠物类型</label>
+                <select id="setup-type">
+                    <option value="cat">🐱 猫咪</option>
+                    <option value="dog">🐶 小狗</option>
+                    <option value="alien">👾 外星生物</option>
+                </select>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="setup-ontop" /> 窗口置顶
+                </label>
+                <button id="setup-btn-save" disabled>💾 保存并开始</button>
+                <div class="error-msg" id="setup-error"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/lib/L2Dwidget.min.js"></script>
+    <script src="js/live2d.js"></script>
+    <script src="js/bridge.js"></script>
+    <script src="js/ui.js"></script>
+
+</body>
+</html>

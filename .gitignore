@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.spec.bak
+
+# Virtual env
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Secrets
+.env
+
+# OS
+Thumbs.db
+Desktop.ini
