@@ -12,6 +12,10 @@
 - 🔌 **多 API 支持**：DeepSeek / OpenAI / 自定义兼容 API
 - ⚙ **设置留存**：配置保存到本地，下次自动加载
 
+## 📸 界面截图
+
+![聊天界面](screenshots/chat.png)
+
 ## 🚀 快速开始
 
 ```bash
@@ -52,6 +56,7 @@ ai-pet/
 │   ├── js/bridge.js        │  通信封装
 │   ├── js/ui.js            │  交互 + 设置流程
 │   └── model/              │  放 Live2D 模型
+├── screenshots/             ← 界面截图
 └── README.md
 ```
 
