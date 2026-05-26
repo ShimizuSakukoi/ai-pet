@@ -67,5 +67,5 @@ IDLE_WELCOME_SECONDS = 300       # 离开多久触发欢迎回来（秒）→ 5 
 FRIENDSHIP_PET_GAIN = 2          # 抚摸奖励好感度增加值
 
 # ==================== 版本 & GitHub ====================
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 GITHUB_REPO = "ShimizuSakukoi/ai-pet"
