@@ -15,6 +15,12 @@ build/
 # Secrets
 .env
 
+# Build output
+dist/
+
 # OS
 Thumbs.db
 Desktop.ini
+
+# Ruff cache
+.ruff_cache/

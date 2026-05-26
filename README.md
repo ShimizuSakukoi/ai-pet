@@ -48,14 +48,23 @@ ai-pet/
 │   ├── memory.py           │  长期记忆管理
 │   └── brain.py            │  图定义核心
 ├── bridge/                 ← 前后端通信
-│   └── handler.py          │  设置管理 + 消息路由
+│   ├── handler.py          │  消息路由（组合以下管理器）
+│   ├── settings.py         │  配置存取 & 连接测试
+│   ├── windows.py          │  窗口控制 & 模型切换 & 开机自启
+│   └── memory_api.py       │  长期记忆 CRUD
 ├── ui/                     ← 前端
-│   ├── index.html          │  主页面（含设置面板）
+│   ├── pet.html            │  宠物窗口（Live2D）
+│   ├── chat.html           │  聊天窗口（对话 & 设置）
 │   ├── css/pet.css         │  样式
-│   ├── js/live2d.js        │  Live2D 加载
-│   ├── js/bridge.js        │  通信封装
-│   ├── js/ui.js            │  交互 + 设置流程
-│   └── model/              │  放 Live2D 模型
+│   ├── js/
+│   │   ├── bridge.js       │  pywebview API 封装
+│   │   ├── emotions.js     │  情绪 emoji 映射
+│   │   ├── shared.js       │  公共 UI 逻辑
+│   │   ├── chat-ui.js      │  聊天窗口控制器
+│   │   ├── pet-ui.js       │  宠物窗口控制器
+│   │   ├── live2d.js       │  Live2D 加载/切换
+│   │   └── lib/            │  第三方库
+│   └── model/              │  Live2D 模型文件
 ├── screenshots/             ← 界面截图
 └── README.md
 ```
@@ -64,18 +73,19 @@ ai-pet/
 
 | 想改什么 | 去哪个文件 |
 |----------|-----------|
-| 宠物性格 | `agent/personality.py` |
-| 情绪判断 | `agent/brain.py` → `_analyze_emotion` |
+| 宠物性格 | `agent/personality.py` + `ui/model/*/persona.txt` |
+| 情绪判断 | `agent/brain.py` → `_call_model` |
 | 长期记忆策略 | `agent/memory.py` |
 | 支持的 API 提供商 | `config.py` → `LLM_PROVIDERS` |
-| 设置面板样式 | `ui/css/pet.css` |
-| 设置面板流程 | `ui/js/ui.js` |
+| 设置面板 | `ui/js/chat-ui.js` + `ui/css/pet.css` |
 | Live2D 模型 | `ui/model/` + `ui/js/live2d.js` |
+| 窗口控制 | `bridge/windows.py` |
+| API 连接 | `bridge/settings.py` |
 
 ## 📦 打包 EXE
 
 ```bash
-pyinstaller --onefile --windowed --name AI-Pet --add-data "ui;ui" main.py
+pyinstaller build.spec
 # 输出: dist/AI-Pet.exe
 ```
 
@@ -83,7 +93,7 @@ pyinstaller --onefile --windowed --name AI-Pet --add-data "ui;ui" main.py
 
 - **Agent**：LangGraph（有状态图编排）
 - **LLM**：LangChain + OpenAI 兼容 API
-- **桌面窗口**：pywebview
+- **桌面窗口**：pywebview（双 frameless 窗口）
 - **Live2D**：live2d-widget
 - **打包**：PyInstaller
 

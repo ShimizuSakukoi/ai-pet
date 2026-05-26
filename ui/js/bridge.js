@@ -210,3 +210,10 @@ async function setAutoStart(enable) {
     try { return await pywebview.api.set_autostart(enable); }
     catch (_) { return { ok: false }; }
 }
+
+// ====== 版本检测 ======
+
+async function checkUpdate() {
+    try { return await pywebview.api.check_update(); }
+    catch (_) { return { ok: false, error: "调用失败" }; }
+}

@@ -62,14 +62,5 @@ function startMoodPoller() {
 function updateMoodTag(mood) {
     const tag = document.querySelector(".mood-tag");
     if (!tag || !mood) return;
-
-    const emoji = {
-        happy: "😊 开心",
-        sad: "😢 难过",
-        angry: "😠 生气",
-        sleepy: "😴 困了",
-        excited: "🎉 兴奋",
-        neutral: "😐 普通",
-    };
-    tag.textContent = emoji[mood] || mood;
+    tag.textContent = MOOD_EMOJI[mood] || mood;
 }

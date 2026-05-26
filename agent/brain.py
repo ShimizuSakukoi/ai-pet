@@ -20,8 +20,10 @@ LLM 初始化改为接收 settings dict（由前端设置面板传入），不�
 """
 
 import os
+import json
 import sqlite3
 import threading
+from datetime import datetime
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -30,6 +32,7 @@ from langchain_openai import ChatOpenAI
 from agent.state import PetState
 from agent.personality import load_persona
 from agent.memory import LongTermMemory
+from agent.logger import get_logger
 from config import (
     DEFAULT_PET_NAME,
     DEFAULT_PET_TYPE,
@@ -37,6 +40,9 @@ from config import (
     INITIAL_FRIENDSHIP,
     LLM_PROVIDERS,
 )
+from config import STORAGE_DIR_NAME  # noqa: E402
+
+logger = get_logger("brain")
 
 
 MOOD_LIST = ["happy", "sad", "angry", "sleepy", "excited", "neutral"]
@@ -75,8 +81,10 @@ class PetBrain:
         # 1. 初始化 LLM（由 settings 驱动）
         self.llm = build_llm_from_settings(self._current_settings)
 
-        # 2. 加载人设（从模型目录的 persona.txt）
-        self._system_prompt = load_persona(model_name, pet_name)
+        # 2. 加载人设（从模型目录的 system.txt + persona.txt）
+        persona_data = load_persona(model_name, pet_name)
+        self._system_rules = persona_data["system"]
+        self._persona = persona_data["persona"]
 
         # 3. 长期记忆 + 检查点
         self.ltm = LongTermMemory()
@@ -86,7 +94,10 @@ class PetBrain:
     def set_model(self, model_name: str):
         """切换模型时更新性格提示词（无需重建图，只换 Prompt）"""
         self.model_name = model_name
-        self._system_prompt = load_persona(model_name, self.pet_name)
+        persona_data = load_persona(model_name, self.pet_name)
+        self._system_rules = persona_data["system"]
+        self._persona = persona_data["persona"]
+        logger.info(f"[SetModel] model={model_name}")
 
     def _rebuild_graph(self):
         """(重新)构建 LangGraph 图 —— 2 节点，1 次 LLM 调用"""
@@ -109,6 +120,32 @@ class PetBrain:
         self.checkpointer = SqliteSaver(conn)
         self.graph = builder.compile(checkpointer=self.checkpointer)
 
+    def _log_full_prompt(self, system_text: str, messages: list, response_text: str):
+        log_dir = os.path.join(os.getenv("APPDATA") or os.path.expanduser("~"),
+                               STORAGE_DIR_NAME, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:19]
+        path = os.path.join(log_dir, f"prompt_{timestamp}.txt")
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("=" * 60 + "\n")
+                f.write("SYSTEM PROMPT:\n")
+                f.write("=" * 60 + "\n")
+                f.write(system_text + "\n\n")
+                f.write("=" * 60 + "\n")
+                f.write("MESSAGES:\n")
+                f.write("=" * 60 + "\n")
+                for m in messages:
+                    role = type(m).__name__.replace("Message", "").upper()
+                    f.write(f"[{role}] {m.content}\n")
+                f.write("\n" + "=" * 60 + "\n")
+                f.write("RESPONSE:\n")
+                f.write("=" * 60 + "\n")
+                f.write(response_text + "\n")
+            logger.info(f"[Prompt] saved to {os.path.basename(path)}")
+        except Exception as e:
+            logger.warning(f"[Prompt] save failed: {e}")
+
     def _call_model(self, state: PetState) -> dict:
         """
         一次 LLM 调用：生成回复 + 情绪分析 + 记忆提取
@@ -119,9 +156,12 @@ class PetBrain:
         mood = state.get("mood", INITIAL_MOOD)
         friendship = state.get("friendship", INITIAL_FRIENDSHIP)
 
-        system_text = self._system_prompt
+        system_text = (
+            f"{self._system_rules}\n\n"
+            f"{self._persona}"
+        )
 
-        # 注入长期记忆
+        # Layer 3: 注入长期记忆
         memories = self.ltm.search(
             messages[-1].content if messages else "", limit=3
         )
@@ -129,6 +169,7 @@ class PetBrain:
             memory_lines = "\n".join(f"  - {m['content']}" for m in memories)
             system_text += f"\n\n## 你记得关于主人的以下事情：\n{memory_lines}"
 
+        # Layer 4: 当前状态 + 输出格式
         system_text += (
             f"\n\n## 当前状态\n情绪: {mood}\n好感度: {friendship}/100\n"
             f"\n## 输出格式要求\n"
@@ -138,9 +179,15 @@ class PetBrain:
             f'用一句话总结（10字以内）；否则填 null"}}'
         )
 
+        logger.info(
+            f"[Prompt] total={len(system_text)}chars, "
+            f"memories={len(memories)}, mood={mood}, friendship={friendship}"
+        )
+
         full_messages = [SystemMessage(content=system_text)] + list(messages)
         response = self.llm.invoke(full_messages)
         raw = response.content.strip()
+        logger.info(f"[Raw] {raw[:120]}...")
 
         # 解析 JSON 回复
         reply_text = raw
@@ -149,7 +196,6 @@ class PetBrain:
         memory_text = None
 
         try:
-            import json
             clean = raw.replace("```json", "").replace("```", "").strip()
             data = json.loads(clean)
             reply_text = data.get("reply", raw)
@@ -165,8 +211,16 @@ class PetBrain:
         except Exception:
             pass  # 解析失败就用原始回复
 
+        logger.info(
+            f"[Parsed] mood={new_mood}, delta={delta}, friendship={friendship + delta}, "
+            f"memory={memory_text}"
+        )
+
         # 存入 state 中的 _parsed 字段供 after_model 使用
         new_friendship = max(0, min(100, friendship + delta))
+
+        self._log_full_prompt(system_text, list(messages), raw)
+
         return {
             "messages": [AIMessage(content=reply_text)],
             "mood": new_mood,
@@ -181,6 +235,7 @@ class PetBrain:
         memory_text = state.get("_memory_text")
         if memory_text and isinstance(memory_text, str) and len(memory_text) < 100:
             self.ltm.add(memory_text)
+            logger.info(f"[Memory] saved: {memory_text}")
         return {}
 
     # ==================== 互动动作 ====================
@@ -219,9 +274,9 @@ class PetBrain:
             )
 
             prompt = (
-                f"{self._system_prompt}\n\n"
+                f"{self._system_rules}\n{self._persona}\n\n"
                 f"以下是主人和你的今日对话记录：\n{convo_text}\n\n"
-                f"请用 2-3 句话总结今天和主人聊了什么，语气保持猫的风格，"
+                f"请用 2-3 句话总结今天和主人聊了什么，语气保持你自己的风格，"
                 f"不要提「总结」「回顾」这些词，就像在自言自语回忆今天。"
             )
 

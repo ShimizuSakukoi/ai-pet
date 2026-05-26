@@ -116,15 +116,10 @@ function setPetMood(mood) {
     if (!mood) return;
     const moodTag = document.querySelector(".mood-tag");
     if (moodTag) {
-        const moodEmoji = {
-            "happy": "😊 开心", "sad": "😢 难过", "angry": "😠 生气",
-            "sleepy": "😴 困了", "excited": "🎉 兴奋", "neutral": "😐 普通",
-        };
-        moodTag.textContent = moodEmoji[mood] || mood;
+        moodTag.textContent = MOOD_EMOJI[mood] || mood;
     }
     const fallback = document.querySelector(".fallback-pet");
     if (fallback) {
-        const emojiMap = {happy:"😸", sad:"😿", angry:"😾", sleepy:"😴", excited:"😻", neutral:"🐱"};
-        fallback.textContent = emojiMap[mood] || "🐱";
+        fallback.textContent = FALLBACK_EMOJI[mood] || "🐱";
     }
 }

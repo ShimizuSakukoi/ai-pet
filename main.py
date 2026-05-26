@@ -27,7 +27,7 @@ import webview
 from PIL import Image, ImageDraw
 
 from bridge.handler import BridgeHandler
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE
+from config import WINDOW_TITLE
 
 
 def get_ui_path():
@@ -85,8 +85,8 @@ def _run_tray(handler):
 
     def on_hide(icon, item):
         try:
-            handler._chat_window.hide()
-            handler._pet_window.hide()
+            handler._state.chat_window.hide()
+            handler._state.pet_window.hide()
         except Exception:
             pass
 
@@ -163,8 +163,8 @@ def main():
     )
 
     # 把两个窗口引用注入 handler（用于跨窗口通信 + 窗口控制）
-    handler._pet_window = pet_window
-    handler._chat_window = chat_window
+    handler._state.pet_window = pet_window
+    handler._state.chat_window = chat_window
 
     # 启动系统托盘（独立 daemon 线程，不阻塞主事件循环）
     tray_thread = threading.Thread(target=_run_tray, args=(handler,), daemon=True)

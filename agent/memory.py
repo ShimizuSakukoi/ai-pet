@@ -28,6 +28,7 @@ import os
 import json
 import uuid
 from datetime import datetime
+from config import MAX_LONG_TERM_MEMORIES
 
 
 class LongTermMemory:
@@ -63,6 +64,8 @@ class LongTermMemory:
             "category": category,
         }
         self._memories.append(memory)
+        if len(self._memories) > MAX_LONG_TERM_MEMORIES:
+            self._memories = self._memories[-MAX_LONG_TERM_MEMORIES:]
         self._save()
         return memory
 

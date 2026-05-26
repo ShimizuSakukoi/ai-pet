@@ -1,25 +1,18 @@
 /* ================================================================
-   桌宠 UI 样式 — 浮动图层架构
+   桌宠 UI 样式 — 双窗口架构
    ================================================================
-   
+
    架构说明：
-     body 作为画布（容器），两个面板 absolute 浮动在其中
-       - .model-area  : Live2D 模型面板（z-index 由 JS 动态管理）
-       - .chat-section: 聊天窗口（可拖拽、可缩放）
-       - .chat-toggle-btn : 聊天关闭时的浮动切换按钮
-   
-   窗口拖拽：body 默认 drag 区域（通过 -webkit-app-region）
-   面板拖拽：JS 自实现（见 ui.js），面板设置 no-drag 防止冲突
-   
-   响应式：面板使用 px 固定尺寸 + JS 自由拖拽定位
-   
+     pet.html  — 宠物窗口（Live2D），独立 inline 样式
+     chat.html — 聊天窗口，加载此 CSS
+
    颜色系统：
-     --bg-primary   : #1a1a2e   (主背景深蓝)
-     --bg-secondary : #16213e   (次背景)
-     --bg-tertiary  : #0f3460   (三级背景/边框)
-     --accent       : #e94560   (强调色粉红)
-     --text-primary : #e0e0e0   (主文本)
-     --text-muted   : #888      (次要文本)
+      --bg-primary   : #1a1a2e   (主背景深蓝)
+      --bg-secondary : #16213e   (次背景)
+      --bg-tertiary  : #0f3460   (三级背景/边框)
+      --accent       : #e94560   (强调色粉红)
+      --text-primary : #e0e0e0   (主文本)
+      --text-muted   : #888      (次要文本)
    ================================================================ */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,44 +28,8 @@ body {
     user-select: none;
 }
 
-/* ========== 模型面板（Live2D 浮动层，点击全身可拖拽） ========== */
-.model-area {
-    position: absolute;
-    top: 12px;
-    left: calc(50% - 200px);
-    width: 400px;
-    height: 520px;
-    z-index: 10;
-    display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 14px;
-    overflow: hidden;
-    cursor: grab;
-    -webkit-app-region: no-drag;
-    box-shadow: 0 4px 28px rgba(0,0,0,0.4);
-}
-.model-area:active { cursor: grabbing; }
-.model-area.dragging { cursor: grabbing; z-index: 1000 !important; }
-#live2d-canvas { width: 100%; height: 100%; }
-.fallback-pet { font-size: 100px; animation: float 3s ease-in-out infinite; }
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-12px); }
-}
-.mood-tag {
-    position: absolute; top: 8px; right: 12px;
-    font-size: 11px; padding: 2px 10px; border-radius: 10px;
-    background: rgba(0,0,0,0.5); color: #aaa; pointer-events: none; z-index: 5;
-}
-.pet-flash { animation: petFlash 0.4s ease-out; }
-@keyframes petFlash {
-    0% { filter: brightness(2); transform: scale(1.05); }
-    100% { filter: brightness(1); transform: scale(1); }
-}
+/* ========== 聊天窗口 ========== */
 
-/* ========== 聊天面板（浮动窗口，标题栏拖拽，右下角缩放） ========== */
-
-/* 独立聊天窗口专用：填满整个窗口，flex 上下分栏 */
 .chat-window {
     width: 100%; height: 100vh;
     display: flex; flex-direction: column;
@@ -80,28 +37,7 @@ body {
     overflow: hidden;
 }
 
-/* 旧浮动聊天面板（保留兼容 index.html） */
-.chat-section {
-    position: absolute;
-    top: 350px;
-    left: 55px;
-    width: 390px;
-    height: 340px;
-    min-width: 280px;
-    min-height: 180px;
-    z-index: 20;
-    display: flex; flex-direction: column;
-    border-radius: 10px;
-    overflow: hidden;
-    -webkit-app-region: no-drag;
-    box-shadow: 0 4px 28px rgba(0,0,0,0.55);
-    border: 1px solid #0f3460;
-}
-
-/* pet-mode 隐藏聊天面板 */
-body.pet-mode .chat-section { display: none; }
-
-/* 聊天标题栏（拖拽把手） */
+/* 标题栏 */
 .chat-header {
     display: flex; justify-content: space-between; align-items: center;
     padding: 5px 10px;
@@ -149,13 +85,6 @@ body.pet-mode .chat-section { display: none; }
 .chat-area .message.user { color: #00d2ff; }
 .chat-area .message.pet { color: #f5a623; }
 .chat-area .message.system { color: #666; font-style: italic; }
-.message-row { display: flex; align-items: flex-start; gap: 4px; }
-.message-row .msg-content { flex: 1; }
-.speak-btn {
-    background: none; border: none; color: #555; cursor: pointer;
-    font-size: 11px; padding: 0 2px; flex-shrink: 0; opacity: 0.5;
-}
-.speak-btn:hover { opacity: 1; color: #e94560; }
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(3px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -208,7 +137,6 @@ body.pet-mode .chat-section { display: none; }
     display: flex; justify-content: space-between; align-items: center;
     padding: 2px 10px; background: #0f3460; font-size: 10px;
     color: #888; flex-shrink: 0;
-    position: relative;
 }
 .friendship-bg {
     display: inline-block; width: 50px; height: 5px;
@@ -218,47 +146,6 @@ body.pet-mode .chat-section { display: none; }
     display: block; height: 100%; width: 30%; background: #e94560;
     border-radius: 3px; transition: width 0.5s;
 }
-.tts-status { color: #555; }
-
-/* 缩放把手（聊天面板右下角） */
-.resize-handle {
-    position: absolute;
-    bottom: 0; right: 0;
-    width: 18px; height: 18px;
-    cursor: nwse-resize;
-    z-index: 30;
-    -webkit-app-region: no-drag;
-}
-.resize-handle::after {
-    content: "";
-    position: absolute;
-    bottom: 4px; right: 4px;
-    width: 0; height: 0;
-    border-style: solid;
-    border-width: 0 0 10px 10px;
-    border-color: transparent transparent #555 transparent;
-}
-
-/* 聊天切换按钮（pet-mode 时显示在右下角） */
-.chat-toggle-btn {
-    position: absolute;
-    bottom: 12px; right: 12px;
-    width: 44px; height: 44px;
-    z-index: 5;
-    border-radius: 50%;
-    background: #e94560;
-    color: #fff;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    box-shadow: 0 3px 14px rgba(0,0,0,0.5);
-    -webkit-app-region: no-drag;
-    display: none;
-    align-items: center; justify-content: center;
-    transition: transform 0.15s;
-}
-.chat-toggle-btn:hover { background: #ff6b81; transform: scale(1.1); }
-body.pet-mode .chat-toggle-btn { display: flex; }
 
 /* ========== 记忆管理面板 ========== */
 .mem-overlay {
@@ -329,6 +216,9 @@ body.pet-mode .chat-toggle-btn { display: flex; }
 .setup-divider { border: none; border-top: 1px solid #0f3460; margin: 18px 0 8px; }
 .error-msg { color: #e94560; font-size: 12px; margin-top: 6px; }
 .hidden { display: none !important; }
+
+.setup-panel a { color: #e94560; text-decoration: none; font-size: 12px; }
+.setup-panel a:hover { text-decoration: underline; }
 
 /* 滚动条 */
 .chat-area::-webkit-scrollbar, .setup-panel::-webkit-scrollbar, .mem-list::-webkit-scrollbar { width: 4px; }

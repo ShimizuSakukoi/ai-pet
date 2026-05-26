@@ -12,12 +12,12 @@ langchain-openai>=0.3.0
 # pywebview —— 把 HTML 装进原生桌面窗口（无需浏览器）
 pywebview>=5.0
 
-# python-dotenv —— 读取 .env 文件中的 API Key
-python-dotenv>=1.0
-
 # 系统托盘
 pystray>=0.19
 Pillow>=10.0
+
+# HTTP 客户端（连接测试 & 未来 API 调用）
+requests>=2.28
 
 # PyInstaller —— 打包成 exe（开发时不必须，发布时用）
 pyinstaller>=6.0

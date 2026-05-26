@@ -65,3 +65,7 @@ MOOD_INTENSITY_DEFAULT = 5      # 情绪强度默认值
 IDLE_CHAT_SECONDS = 600          # 空闲多久触发主动搭话（秒）→ 10 分钟
 IDLE_WELCOME_SECONDS = 300       # 离开多久触发欢迎回来（秒）→ 5 分钟
 FRIENDSHIP_PET_GAIN = 2          # 抚摸奖励好感度增加值
+
+# ==================== 版本 & GitHub ====================
+APP_VERSION = "1.0.0"
+GITHUB_REPO = "ShimizuSakukoi/ai-pet"
