@@ -142,7 +142,7 @@ class LongTermMemory:
             try:
                 with open(self._file_path, "r", encoding="utf-8") as f:
                     self._memories = json.load(f)
-            except (json.JSONDecodeError, IOError):
+            except (json.JSONDecodeError, OSError):
                 self._memories = []
 
     def _save(self):
@@ -150,5 +150,5 @@ class LongTermMemory:
         try:
             with open(self._file_path, "w", encoding="utf-8") as f:
                 json.dump(self._memories, f, ensure_ascii=False, indent=2)
-        except IOError:
+        except OSError:
             pass  # 保存失败不崩溃，下次再试

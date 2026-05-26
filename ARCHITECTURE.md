@@ -52,16 +52,18 @@ ai-pet/
 │       ├── haru/          # Live2D 角色：元气少女 Haru
 │       │   ├── system.txt     # 安全护栏（底层规则）
 │       │   ├── persona.txt    # 角色设定（外表/性格/说话风格）
+│       │   ├── interactions.json  # 触摸交互配置
 │       │   ├── haru01.model.json
 │       │   ├── exp/           # 8 个表情 JSON
 │       │   ├── moc/           # 模型 + 纹理
 │       │   └── mtn/           # 16 个动作文件
-│       └── tororo/        # Live2D 角色：外星漂浮生物 Tororo
+│       └── dafeng/        # Live2D 角色：航空母舰大凤
 │           ├── system.txt
 │           ├── persona.txt
-│           ├── tororo.model.json
-│           ├── moc/           # 模型 + 纹理
-│           └── mtn/           # 9 个动作文件
+│           ├── interactions.json  # 触摸交互配置
+│           ├── dafeng_2_hx.model3.json
+│           ├── textures/
+│           └── motions/       # 14 个动作文件
 │
 └── storage/               # 空目录（运行时数据存 AppData）
 ```

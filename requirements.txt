@@ -21,3 +21,6 @@ requests>=2.28
 
 # PyInstaller —— 打包成 exe（开发时不必须，发布时用）
 pyinstaller>=6.0
+
+# 测试
+pytest>=8.0

@@ -13,7 +13,9 @@ class WindowManager:
     def __init__(self, state):
         self._state = state
 
-    def _scan_models(self):
+    def scan_models(self):
+        import json
+
         if getattr(sys, "frozen", False):
             model_dir = os.path.join(sys._MEIPASS, "ui", "model")
         else:
@@ -23,17 +25,27 @@ class WindowManager:
             )
         models = []
         if not os.path.isdir(model_dir):
-            return [{"name": "haru", "model_file": "haru01.model.json"}]
+            return [{"name": "dafeng", "model_file": "dafeng_2_hx.model3.json"}]
         try:
             for entry in sorted(os.scandir(model_dir), key=lambda e: e.name):
                 if entry.is_dir():
                     for f in os.listdir(entry.path):
-                        if f.endswith(".model.json"):
-                            models.append({"name": entry.name, "model_file": f})
+                        if f.endswith(".model.json") or f.endswith(".model3.json"):
+                            info = {"name": entry.name, "model_file": f}
+                            interactions_path = os.path.join(
+                                entry.path, "interactions.json"
+                            )
+                            if os.path.exists(interactions_path):
+                                try:
+                                    with open(interactions_path, "r", encoding="utf-8") as fi:
+                                        info["interactions"] = json.load(fi)
+                                except Exception:
+                                    pass
+                            models.append(info)
                             break
         except Exception:
             pass
-        return models or [{"name": "haru", "model_file": "haru01.model.json"}]
+        return models or [{"name": "dafeng", "model_file": "dafeng_2_hx.model3.json"}]
 
     def get_models(self):
         return {"models": self._state.models}
@@ -82,7 +94,8 @@ class WindowManager:
         if self._state.pet_window:
             try:
                 self._state.pet_window.evaluate_js(
-                    f"switchModel({int(direction)})"
+                    f"switchModel({int(direction)});"
+                    f"onModelChange({self._state.model_index});"
                 )
             except Exception:
                 pass

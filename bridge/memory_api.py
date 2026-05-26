@@ -13,7 +13,8 @@ class MemoryController:
         if not self._state.brain:
             return {"memories": []}
         try:
-            mems = self._state.brain.ltm.get_all()
+            with self._state.brain._lock:
+                mems = self._state.brain.ltm.get_all()
             return {"memories": list(reversed(mems))}
         except Exception:
             return {"memories": []}
@@ -22,7 +23,8 @@ class MemoryController:
         if not self._state.brain:
             return {"ok": False}
         try:
-            ok = self._state.brain.ltm.delete(mid)
+            with self._state.brain._lock:
+                ok = self._state.brain.ltm.delete(mid)
             return {"ok": ok}
         except Exception:
             return {"ok": False}
@@ -31,7 +33,8 @@ class MemoryController:
         if not self._state.brain:
             return {"ok": False}
         try:
-            ok = self._state.brain.ltm.update(mid, content)
+            with self._state.brain._lock:
+                ok = self._state.brain.ltm.update(mid, content)
             return {"ok": ok}
         except Exception:
             return {"ok": False}

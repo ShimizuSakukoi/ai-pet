@@ -56,10 +56,8 @@ MAX_MESSAGES_BEFORE_TRIM = 40   # 对话消息超过此数量时触发裁剪
 MAX_LONG_TERM_MEMORIES = 50     # 长期记忆最多保留条数
 STORAGE_DIR_NAME = "AI-Pet"     # 存储目录名（位于 %APPDATA% 下）
 
-# ==================== 情绪系统初始值 ====================
-INITIAL_MOOD = "neutral"        # 初始情绪（happy/sad/angry/sleepy/excited/neutral）
+# ==================== 好感度初始值 ====================
 INITIAL_FRIENDSHIP = 30         # 初始好感度（0-100）
-MOOD_INTENSITY_DEFAULT = 5      # 情绪强度默认值
 
 # ==================== 互动配置 ====================
 IDLE_CHAT_SECONDS = 600          # 空闲多久触发主动搭话（秒）→ 10 分钟

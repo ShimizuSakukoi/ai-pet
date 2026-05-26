@@ -1,0 +1,51 @@
+{
+  "zones": [
+    {
+      "id": "head",
+      "hit": [0.25, 0.00, 0.50, 0.30],
+      "trigger": "dblclick",
+      "action": "pet",
+      "motion": "touch_head"
+    },
+    {
+      "id": "body",
+      "hit": [0.15, 0.30, 0.70, 0.50],
+      "trigger": "dblclick",
+      "action": "pet",
+      "motion": "touch_body"
+    },
+    {
+      "id": "full",
+      "hit": [0, 0, 1, 1],
+      "trigger": "drag",
+      "action": "drag"
+    }
+  ],
+  "idle_timeout": 600,
+  "welcome_timeout": 300,
+  "prompts": {
+    "pet": [
+      "指挥官伸手摸了摸{name}的头，{name}脸颊微红",
+      "指挥官轻轻抚摸着{name}，{name}幸福地眯起眼睛",
+      "指挥官温柔地拍了拍{name}",
+      "指挥官宠溺地揉着{name}的脑袋",
+      "指挥官用手指戳了戳{name}的脸，{name}气鼓鼓地瞪了指挥官一眼"
+    ],
+    "drag": [
+      "指挥官把{name}拽了一下",
+      "指挥官把{name}挪了个位置",
+      "指挥官拉扯了{name}一下"
+    ],
+    "welcome": [
+      "指挥官回来了！{name}一直在等你",
+      "指挥官终于回来了，{name}立刻迎上去",
+      "{name}看到指挥官回来了，开心地挥舞着手臂"
+    ],
+    "idle": [
+      "指挥官很久没理{name}了，{name}感到有点寂寞",
+      "{name}已经沉默好一阵了，想引起指挥官的注意",
+      "{name}一个人待着有点无聊了，想和指挥官说说话",
+      "{name}觉得指挥官好像忘了{name}，有点委屈"
+    ]
+  }
+}

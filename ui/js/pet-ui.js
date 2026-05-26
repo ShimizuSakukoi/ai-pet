@@ -1,66 +1,81 @@
 /**
- * 宠物窗口控制器
+ * 宠物窗口控制器 —— 基于 interactions.json 的触摸命中检测
  * ============================================================
  * 职责：
  *   - 初始化 Live2D 模型
- *   - 双击抚摸互动
+ *   - 根据当前模型的 interactions.zones 动态绑定触摸事件
+ *   - 命中检测（相对坐标 vs hit 区域）
  *   - 右键打开聊天窗口
- *   - 定期轮询情绪/好感度状态
- *   - 闪烁反馈动画
+ *
+ * 模型切换时重新加载 zones
  */
+let _interactions = null;
+let _currentZones = [];
 
-// ==================== 全局状态 ====================
-let lastFlash = null;
-
-// ==================== 初始化 ====================
+let _modelLoaded = false;
 
 window.addEventListener("load", async () => {
+    await tryLoadModel();
+    bindPetEvents();
+    if (!_modelLoaded) {
+        setTimeout(async () => { await tryLoadModel(); }, 2000);
+    }
+});
+
+async function tryLoadModel() {
+    if (_modelLoaded) return;
     const result = await getModels();
     if (result.models && result.models.length) {
         setModels(result.models);
+        const m = result.models[0];
+        _interactions = m.interactions || {};
+        _currentZones = _interactions.zones || [];
+        _modelLoaded = true;
     }
     initLive2D();
-    bindPetEvents();
-    startMoodPoller();
-});
+}
 
-// ==================== 事件绑定 ====================
+function onModelChange(modelIndex) {
+    if (MODEL_LIST && MODEL_LIST[modelIndex]) {
+        _interactions = MODEL_LIST[modelIndex].interactions || {};
+        _currentZones = _interactions.zones || [];
+    }
+}
 
 function bindPetEvents() {
     const container = document.querySelector(".pet-container");
 
-    // 双击 → 抚摸互动
-    container.addEventListener("dblclick", async (e) => {
-        e.preventDefault();
-        container.classList.add("pet-flash");
-        setTimeout(() => container.classList.remove("pet-flash"), 400);
+    container.addEventListener("dblclick", (e) => {
+        const zone = hitTest(e);
+        if (zone) {
+            e.preventDefault();
+            container.classList.add("pet-flash");
+            setTimeout(() => container.classList.remove("pet-flash"), 400);
 
-        const result = await petAction("pet");
-        if (result.text) {
-            updateMoodTag(result.mood);
+            if (zone.motion && typeof playMotion === "function") {
+                playMotion(zone.motion);
+            }
+            petAction(zone.action);
         }
     });
 
-    // 右键 → 打开聊天窗口
     container.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         windowShow();
     });
 }
 
-// ==================== 状态轮询 ====================
+function hitTest(e) {
+    const container = document.querySelector(".pet-container");
+    const rect = container.getBoundingClientRect();
+    const rx = (e.clientX - rect.left) / rect.width;
+    const ry = (e.clientY - rect.top) / rect.height;
 
-function startMoodPoller() {
-    setInterval(async () => {
-        const st = await getStatus();
-        if (st.ready && st.mood) {
-            updateMoodTag(st.mood);
+    for (const zone of _currentZones) {
+        const [zx, zy, zw, zh] = zone.hit;
+        if (rx >= zx && rx <= zx + zw && ry >= zy && ry <= zy + zh) {
+            return zone;
         }
-    }, 5000);
-}
-
-function updateMoodTag(mood) {
-    const tag = document.querySelector(".mood-tag");
-    if (!tag || !mood) return;
-    tag.textContent = MOOD_EMOJI[mood] || mood;
+    }
+    return null;
 }

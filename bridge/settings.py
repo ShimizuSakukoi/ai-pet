@@ -7,12 +7,10 @@ Settings Manager —— 配置存取 & LLM 连接测试
 import os
 import json
 
-from agent.brain import PetBrain, build_llm_from_settings
+from agent.brain import PetBrain
+from agent.llm import build_llm_from_settings
+from bridge.utils import safe_err
 from config import LLM_PROVIDERS, PROVIDER_MODELS
-
-
-def _safe_err(e):
-    return str(e)[:200]
 
 
 class SettingsManager:
@@ -51,7 +49,7 @@ class SettingsManager:
             print(f"[load_settings] failed: {e}", flush=True)
             traceback.print_exc()
             return {"ok": True, "settings": settings, "ready": False,
-                    "error": _safe_err(e)}
+                    "error": safe_err(e)}
 
     def save_settings(self, settings):
         self._state.settings = settings
@@ -60,7 +58,7 @@ class SettingsManager:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(settings, f, ensure_ascii=False, indent=2)
         except Exception as e:
-            return {"ok": False, "error": _safe_err(e)}
+            return {"ok": False, "error": safe_err(e)}
 
         try:
             self._state.brain = PetBrain(
@@ -77,7 +75,7 @@ class SettingsManager:
                     pass
             return {"ok": True}
         except Exception as e:
-            return {"ok": False, "error": _safe_err(e)}
+            return {"ok": False, "error": safe_err(e)}
 
     def test_connection(self, settings):
         try:
@@ -85,7 +83,7 @@ class SettingsManager:
             resp = llm.invoke("请回复一个字：嗨")
             return {"ok": True, "test_reply": resp.content.strip()}
         except Exception as e:
-            return {"ok": False, "error": _safe_err(e)}
+            return {"ok": False, "error": safe_err(e)}
 
     def get_providers(self):
         return {"providers": {

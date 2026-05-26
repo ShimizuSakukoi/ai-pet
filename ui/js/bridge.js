@@ -54,29 +54,29 @@ async function getProviders() {
  * 发送聊天消息 → 获取 AI 回复
  * @param {string} text - 用户输入
  * @param {string} threadId - 对话线程 ID
- * @returns {{ text: string, mood: string, friendship: number }}
+ * @returns {{ text: string, friendship: number }}
  */
 async function sendChat(text, threadId) {
-    try { return await pywebview.api.chat(text, threadId || "default"); }
-    catch (_) { return { text: "（连接断开）", mood: "neutral", friendship: 0 }; }
+    try { return await pywebview.api.chat(text, threadId || null); }
+    catch (_) { return { text: "（连接断开）", friendship: 0 }; }
 }
 
 /**
  * 重置所有记忆（清除长期记忆 + SQLite 对话历史）
- * @returns {{ text: string, mood: string, friendship: number }}
+ * @returns {{ text: string, friendship: number }}
  */
 async function resetMemory() {
     try { return await pywebview.api.reset(); }
-    catch (_) { return { text: "重置失败", mood: "neutral", friendship: 0 }; }
+    catch (_) { return { text: "重置失败", friendship: 0 }; }
 }
 
 /**
  * 获取当前宠物状态
- * @returns {{ ready: boolean, mood: string, friendship: number, memories_count: number }}
+ * @returns {{ ready: boolean, friendship: number, memories_count: number }}
  */
 async function getStatus() {
     try { return await pywebview.api.get_status(); }
-    catch (_) { return { ready: false, mood: "neutral", friendship: 0, memories_count: 0 }; }
+    catch (_) { return { ready: false, friendship: 0, memories_count: 0 }; }
 }
 
 // ====== 窗口控制 ======
@@ -87,16 +87,34 @@ async function toggleOnTop() {
     catch (_) { return { on_top: false }; }
 }
 
+/** 显示窗口 */
+async function windowShow() {
+    try { return await pywebview.api.window_show(); }
+    catch (_) { return { ok: false }; }
+}
+
+/** 最小化窗口 */
+async function windowHide() {
+    try { return await pywebview.api.window_minimize(); }
+    catch (_) { return { ok: false }; }
+}
+
+/** 退出程序 */
+async function quitApp() {
+    try { return await pywebview.api.quit_app(); }
+    catch (_) {}
+}
+
 // ====== 互动动作 ======
 
 /**
  * 发送特殊互动动作
  * @param {string} actionType - "pet"|"drag"|"welcome"|"idle"
- * @returns {{ text: string, mood: string, friendship: number, action: string }}
+ * @returns {{ text: string, friendship: number, action: string }}
  */
 async function petAction(actionType) {
     try { return await pywebview.api.pet_action(actionType); }
-    catch (_) { return { text: "", mood: "neutral", friendship: 0, action: actionType }; }
+    catch (_) { return { text: "", friendship: 0, action: actionType }; }
 }
 
 /**
@@ -108,86 +126,17 @@ async function dailyReview() {
     catch (_) { return { text: "", ok: false }; }
 }
 
-// ====== TTS 语音合成（当前占位） ======
+// ====== 模型 ======
 
-/**
- * TTS 语音合成接口
- * 当前返回空数据，后续接入训练好的本地 TTS 模型
- * @param {string} text - 待朗读文本
- * @returns {{ audio: any|null, format: string }}
- */
-async function speak(text) {
-    try { return await pywebview.api.speak(text); }
-    catch (_) { return { audio: null, format: "" }; }
-}
-
-// ====== 记忆管理 ======
-
-/**
- * 获取所有长期记忆
- * @returns {{ memories: Array<{id, content, timestamp, category}> }}
- */
-async function getMemories() {
-    try { return await pywebview.api.get_memories(); }
-    catch (_) { return { memories: [] }; }
-}
-
-/**
- * 删除单条记忆
- * @param {string} mid - 记忆 ID
- * @returns {{ ok: boolean }}
- */
-async function deleteMemory(mid) {
-    try { return await pywebview.api.delete_memory(mid); }
-    catch (_) { return { ok: false }; }
-}
-
-/**
- * 修改单条记忆内容
- * @param {string} mid - 记忆 ID
- * @param {string} content - 新内容
- * @returns {{ ok: boolean }}
- */
-async function updateMemory(mid, content) {
-    try { return await pywebview.api.update_memory(mid, content); }
-    catch (_) { return { ok: false }; }
-}
-
-// ====== 应用控制 ======
-
-/** 退出应用（关闭所有窗口） */
-async function quitApp() {
-    try { await pywebview.api.quit_app(); }
-    catch (_) {}
-}
-
-// ====== 跨窗口通信 ======
-
-/**
- * 获取自动发现的模型列表
- * @returns {{ models: Array<{name: string, model_file: string}> }}
- */
 async function getModels() {
-    try { return await pywebview.api.get_models(); }
-    catch (_) { return { models: [{name: "haru", model_file: "haru01.model.json"}, {name: "tororo", model_file: "tororo.model.json"}] }; }
-}
-
-/**
- * 显示聊天窗口（从宠物窗口右键触发）
- */
-async function windowShow() {
-    try { return await pywebview.api.window_show(); }
-    catch (_) { return { ok: false }; }
-}
-
-/**
- * 移动聊天窗口（JS 拖拽标题栏用）
- * @param {number} x - 新 X 坐标
- * @param {number} y - 新 Y 坐标
- */
-async function windowMove(x, y) {
-    try { return await pywebview.api.window_move(x, y); }
-    catch (_) { return { ok: false }; }
+    for (let i = 0; i < 20; i++) {
+        if (typeof pywebview !== "undefined" && pywebview.api) {
+            try { return await pywebview.api.get_models(); }
+            catch (_) { /* retry */ }
+        }
+        await new Promise(x => setTimeout(x, 300));
+    }
+    return { models: [] };
 }
 
 /**
