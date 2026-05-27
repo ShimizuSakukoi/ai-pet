@@ -21,45 +21,42 @@ class InteractionBridge:
         if not self._state.brain:
             return {
                 "text": "我还没准备好…请先设置 API Key",
-                "friendship": 0,
             }
         logger.info(f"[chat] text={text[:60]}, thread={thread_id}")
         try:
             result = self._state.brain.chat(text, thread_id)
-            logger.info(f"[chat] friendship={result.get('friendship')}")
+            logger.info("[chat] ok")
             return result
         except Exception as e:
-            return {"text": f"(出错: {safe_err(e)})", "friendship": 0}
+            return {"text": f"(出错: {safe_err(e)})"}
 
     def reset(self, thread_id=None):
         if not self._state.brain:
-            return {"text": "没有可清除的记忆", "friendship": 0}
+            return {"text": "没有可清除的记忆"}
         return self._state.brain.reset(thread_id or self._state.current_model)
 
     def get_status(self, thread_id=None):
         if not self._state.brain:
-            return {"ready": False, "friendship": 0, "memories_count": 0}
+            return {"ready": False, "memories_count": 0}
         try:
             s = self._state.brain.get_status(thread_id)
             s["ready"] = True
             return s
         except Exception:
-            return {"ready": True, "friendship": 0, "memories_count": 0}
+            return {"ready": True, "memories_count": 0}
 
     def pet_action(self, action_type, thread_id=None):
         if not self._state.brain:
-            return {"text": "", "friendship": 0, "action": action_type}
+            return {"text": "", "action": action_type}
         logger.info(f"[pet_action] type={action_type}, thread={thread_id}")
         try:
             result = self._state.brain.action(action_type, thread_id)
             text = result.get("text", "")
-            friendship = result.get("friendship", 0)
             if text and self._state.chat_window:
                 try:
                     safe_text = json.dumps(html.escape(text))
                     self._state.chat_window.evaluate_js(
                         f"addMessage('pet', {safe_text}, true);"
-                        f"updateFriendship({friendship});"
                     )
                 except Exception:
                     pass
@@ -67,7 +64,6 @@ class InteractionBridge:
         except Exception as e:
             return {
                 "text": "",
-                "friendship": 0,
                 "action": action_type,
                 "error": safe_err(e),
             }
@@ -96,3 +92,34 @@ class InteractionBridge:
 
     def speak(self, text):
         return {"audio": None, "format": ""}
+
+    def generate_quick_replies(self):
+        if not self._state.brain:
+            return {"replies": []}
+        try:
+            replies = self._state.brain._interaction.generate_quick_replies()
+            return {"replies": replies}
+        except Exception:
+            return {"replies": []}
+
+    def get_audio(self, model_name, audio_path):
+        import sys
+        import base64
+        if getattr(sys, "frozen", False):
+            audio_dir = os.path.join(sys._MEIPASS, "ui", "model", model_name)
+        else:
+            audio_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                "ui", "model", model_name
+            )
+        clean_path = audio_path.replace("/", os.sep).replace("\\", os.sep)
+        file_path = os.path.join(audio_dir, clean_path)
+        if not os.path.exists(file_path):
+            return {"audio": None, "mime": ""}
+        try:
+            with open(file_path, "rb") as f:
+                data = base64.b64encode(f.read()).decode("utf-8")
+            mime = "audio/mpeg" if file_path.endswith(".mp3") else "audio/wav"
+            return {"audio": data, "mime": mime}
+        except Exception:
+            return {"audio": None, "mime": ""}

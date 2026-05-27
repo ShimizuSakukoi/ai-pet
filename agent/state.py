@@ -7,7 +7,6 @@ LangGraph 的核心概念：
 
 字段说明：
   messages     - 对话历史（add_messages 表示追加，不覆盖旧消息）
-  friendship   - 好感度：0-100（越高越亲近）
   _memory_text - 临时字段：在 call_model 和 after_model 之间传递待保存的记忆文本
                  下划线前缀表示这是内部传递字段，不暴露给前端
 """
@@ -18,5 +17,4 @@ from langgraph.graph.message import add_messages
 
 class PetState(TypedDict):
     messages: Annotated[list, add_messages]
-    friendship: int
     _memory_text: Optional[str]

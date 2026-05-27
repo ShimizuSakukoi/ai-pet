@@ -25,7 +25,7 @@ class WindowManager:
             )
         models = []
         if not os.path.isdir(model_dir):
-            return [{"name": "dafeng", "model_file": "dafeng_2_hx.model3.json"}]
+            return []
         try:
             for entry in sorted(os.scandir(model_dir), key=lambda e: e.name):
                 if entry.is_dir():
@@ -45,7 +45,7 @@ class WindowManager:
                             break
         except Exception:
             pass
-        return models or [{"name": "dafeng", "model_file": "dafeng_2_hx.model3.json"}]
+        return models
 
     def get_models(self):
         return {"models": self._state.models}

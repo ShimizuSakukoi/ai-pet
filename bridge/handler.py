@@ -59,7 +59,7 @@ class BridgeHandler:
 
         models = self.windows.scan_models()
         self._state.models = models
-        self._state.current_model = models[0]["name"] if models else "dafeng"
+        self._state.current_model = models[0]["name"] if models else None
 
     # ── Settings proxy ──
     def load_settings(self):
@@ -130,6 +130,12 @@ class BridgeHandler:
 
     def speak(self, text):
         return self._interaction.speak(text)
+
+    def generate_quick_replies(self):
+        return self._interaction.generate_quick_replies()
+
+    def get_audio(self, model_name, audio_path):
+        return self._interaction.get_audio(model_name, audio_path)
 
     def check_update(self):
         from bridge.updater import check_update as _do_check

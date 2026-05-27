@@ -42,7 +42,7 @@ def load_interactions(model_name: str) -> dict:
 def load_persona(model_name: str, pet_name: str) -> dict:
     """
     从模型目录加载 system.txt 和 persona.txt
-    @param model_name: 模型名（如 "haru" / "dafeng"）
+    @param model_name: 模型名（如 "dafeng"）
     @param pet_name: 宠物名字，替换 {name} 占位符
     @returns {"system": str, "persona": str}
     """

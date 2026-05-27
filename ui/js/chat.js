@@ -21,15 +21,15 @@ async function sendMessage() {
     recordActivity();
     addMessage("user", text); input.value = ""; idleChatSent = false;
     isWaiting = true; const btn = document.getElementById("send-btn"); btn.disabled = true; btn.textContent = "…";
-    const result = await sendChat(text);
-    addMessage("pet", result.text, true); updateFriendship(result.friendship); notifyPet(result.text);
+    const result = await sendChat(text, currentThreadId);
+    addMessage("pet", result.text, true); notifyPet(result.text);
     isWaiting = false; btn.disabled = false; btn.textContent = "发送"; input.focus();
 }
 
 async function doReset() {
     if (!confirm("确定要清除所有记忆吗？")) return;
     const result = await resetMemory();
-    addMessage("system", result.text); updateFriendship(result.friendship); updateMemoryCount(0);
+    addMessage("system", result.text); updateMemoryCount(0);
 }
 
 function loadSettingsWithRetry(n = 20) {
@@ -69,8 +69,8 @@ function bindEvents() {
     document.getElementById("btn-new-chat").addEventListener("click", newConversation);
     document.getElementById("btn-chat-close").addEventListener("click", () => { try { pywebview.api.window_minimize().catch(() => {}); } catch (_) {} });
 
-    document.getElementById("btn-model-prev").addEventListener("click", () => { switchPetModel(-1); updateModelBtn(-1); addMessage("system", `已切换到 ${MODEL_NAMES[currentModelIdx]}`); });
-    document.getElementById("btn-model-next").addEventListener("click", () => { switchPetModel(1); updateModelBtn(1); addMessage("system", `已切换到 ${MODEL_NAMES[currentModelIdx]}`); });
+    document.getElementById("btn-model-prev").addEventListener("click", () => { switchPetModel(-1); updateModelBtn(-1); newConversation(); addMessage("system", `已切换到 ${MODEL_NAMES[currentModelIdx]}`); });
+    document.getElementById("btn-model-next").addEventListener("click", () => { switchPetModel(1); updateModelBtn(1); newConversation(); addMessage("system", `已切换到 ${MODEL_NAMES[currentModelIdx]}`); });
 
     document.getElementById("btn-minimize").addEventListener("click", () => { try { pywebview.api.window_minimize().catch(() => {}); } catch (_) {} });
     document.getElementById("btn-quit").addEventListener("click", () => quitApp());
@@ -83,7 +83,9 @@ function bindEvents() {
     document.getElementById("setup-btn-update").addEventListener("click", doCheckUpdate);
     document.getElementById("setup-apikey").addEventListener("keydown", e => { if (e.key === "Enter") doTestConnection(); });
 
-    document.querySelectorAll(".quick-replies button").forEach(b => b.addEventListener("click", () => sendQuickReply(b.dataset.text)));
+    document.querySelectorAll(".quick-replies button:not(#btn-refresh-replies)").forEach(b => b.addEventListener("click", () => sendQuickReply(b.dataset.text)));
+
+    document.getElementById("btn-refresh-replies").addEventListener("click", refreshQuickReplies);
 
     initVoice();
     document.getElementById("btn-voice").addEventListener("click", toggleVoice);
@@ -102,6 +104,7 @@ window.addEventListener("load", async () => {
     if (modelsResult.models && modelsResult.models.length) {
         _allModels = modelsResult.models;
         MODEL_NAMES = _allModels.map(m => m.name);
+        currentThreadId = MODEL_NAMES[0] + "_" + Date.now();
         document.getElementById("btn-model-name").textContent = MODEL_NAMES[0];
         if (_allModels[0]) updateIdleConfig(_allModels[0].interactions);
     }
@@ -112,6 +115,7 @@ window.addEventListener("load", async () => {
     const result = await loadSettingsWithRetry();
     if (result.ok && result.settings && result.settings.api_key) {
         savedSettings = result.settings;
+        applyTheme(savedSettings.theme || "dark");
         if (result.ready) await doAutoInit(savedSettings);
         else {
             document.body.classList.remove("pet-mode");
@@ -119,6 +123,7 @@ window.addEventListener("load", async () => {
         }
     } else {
         document.body.classList.remove("pet-mode");
+        applyTheme("dark");
         let hint = "⚡ 欢迎！点击 ⚙ 设置 配置 API Key 后开始聊天";
         if (result.settings === null) hint += " (未找到已保存的配置)";
         addMessage("system", hint);
@@ -127,3 +132,25 @@ window.addEventListener("load", async () => {
     bindEvents();
     startIdleWatcher();
 });
+
+async function refreshQuickReplies() {
+    const result = await generateQuickReplies();
+    renderQuickReplies(result.replies || []);
+}
+
+function renderQuickReplies(replies) {
+    const container = document.getElementById("quick-replies");
+    const refreshBtn = document.getElementById("btn-refresh-replies");
+    container.innerHTML = "";
+    if (refreshBtn) container.appendChild(refreshBtn);
+    if (!replies.length) {
+        replies = ["在干嘛？", "摸摸头", "饿了吗", "讲个笑话", "不理你了", "晚安"];
+    }
+    replies.forEach(text => {
+        const btn = document.createElement("button");
+        btn.dataset.text = text;
+        btn.textContent = text;
+        btn.addEventListener("click", () => sendQuickReply(text));
+        container.appendChild(btn);
+    });
+}

@@ -14,10 +14,6 @@ function addMessage(role, content, withSpeak) {
     chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-function updateFriendship(v) {
-    const el = document.getElementById("friendship-bar");
-    if (el) { el.style.width = v + "%"; el.title = "好感度: " + v + "/100"; }
-}
 
 function updateMemoryCount(c) {
     const el = document.getElementById("mem-count");
@@ -27,6 +23,7 @@ function updateMemoryCount(c) {
 function newConversation() {
     if (isWaiting) return;
     document.getElementById("chat-area").innerHTML = "";
+    currentThreadId = (MODEL_NAMES[currentModelIdx] || "pet") + "_" + Date.now();
     addMessage("system", "新对话开始~");
     idleChatSent = false;
     wasAway = false;

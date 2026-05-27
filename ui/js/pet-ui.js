@@ -6,6 +6,8 @@
  *   - 根据当前模型的 interactions.zones 动态绑定触摸事件
  *   - 命中检测（相对坐标 vs hit 区域）
  *   - 右键打开聊天窗口
+ *   - 拖拽检测（mousedown/move/up）
+ *   - 触摸音频播放（zone.audio 随机选取）
  *
  * 模型切换时重新加载 zones
  */
@@ -13,6 +15,7 @@ let _interactions = null;
 let _currentZones = [];
 
 let _modelLoaded = false;
+let _dragState = null;
 
 window.addEventListener("load", async () => {
     await tryLoadModel();
@@ -47,21 +50,45 @@ function bindPetEvents() {
 
     container.addEventListener("dblclick", (e) => {
         const zone = hitTest(e);
-        if (zone) {
+        if (zone && zone.trigger === "dblclick") {
             e.preventDefault();
-            container.classList.add("pet-flash");
-            setTimeout(() => container.classList.remove("pet-flash"), 400);
 
             if (zone.motion && typeof playMotion === "function") {
                 playMotion(zone.motion);
             }
-            petAction(zone.action);
+            if (zone.audio) playZoneAudio(zone.audio);
+            petAction(zone.action, currentThreadId);
         }
     });
 
     container.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         windowShow();
+    });
+
+    container.addEventListener("mousedown", (e) => {
+        const zone = hitTest(e);
+        if (zone && zone.trigger === "drag") {
+            _dragState = { startX: e.clientX, startY: e.clientY, triggered: false, zone: zone };
+        }
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (!_dragState) return;
+        const dx = Math.abs(e.clientX - _dragState.startX);
+        const dy = Math.abs(e.clientY - _dragState.startY);
+        if ((dx > 5 || dy > 5) && !_dragState.triggered) {
+            _dragState.triggered = true;
+            if (_dragState.zone.motion && typeof playMotion === "function") {
+                playMotion(_dragState.zone.motion);
+            }
+            if (_dragState.zone.audio) playZoneAudio(_dragState.zone.audio);
+            petAction("drag", currentThreadId);
+        }
+    });
+
+    document.addEventListener("mouseup", () => {
+        _dragState = null;
     });
 }
 
@@ -78,4 +105,17 @@ function hitTest(e) {
         }
     }
     return null;
+}
+
+function playZoneAudio(audioList) {
+    if (!audioList || !audioList.length) return;
+    if (typeof audioList === "string") audioList = [audioList];
+    const pick = audioList[Math.floor(Math.random() * audioList.length)];
+    const currentModel = MODEL_NAMES[currentModelIdx] || "dafeng";
+    getAudio(currentModel, pick).then(res => {
+        if (res && res.audio) {
+            const audio = new Audio("data:" + res.mime + ";base64," + res.audio);
+            audio.play().catch(() => {});
+        }
+    });
 }

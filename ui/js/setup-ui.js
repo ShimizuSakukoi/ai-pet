@@ -16,12 +16,17 @@ function showSetup(isEdit) {
         document.getElementById("setup-baseurl").value = savedSettings.base_url || "";
         document.getElementById("setup-ontop").checked = savedSettings.on_top || false;
         document.getElementById("setup-autostart").checked = savedSettings.autostart || false;
+        document.getElementById("setup-theme").value = savedSettings.theme || "dark";
     } else {
         document.getElementById("setup-apikey").value = "";
         document.getElementById("setup-ontop").checked = false;
         document.getElementById("setup-autostart").checked = false;
     }
     onProviderChange();
+    if (isEdit && savedSettings && savedSettings.api_key) {
+        connectionTested = true;
+        document.getElementById("setup-btn-save").disabled = false;
+    }
     if (isEdit && savedSettings && savedSettings.model_name) {
         const sel = document.getElementById("setup-model");
         let found = false;
@@ -63,6 +68,7 @@ function getCurrentSettings() {
         model_name: document.getElementById("setup-model").value || (info ? info.default_model : (fb ? fb.model : "")),
         on_top: document.getElementById("setup-ontop").checked,
         autostart: document.getElementById("setup-autostart").checked,
+        theme: document.getElementById("setup-theme").value,
     };
 }
 
@@ -96,6 +102,6 @@ async function doSaveSettings() {
     const b = document.getElementById("setup-btn-save"); b.disabled = true; b.textContent = "保存中..."; document.getElementById("setup-error").textContent = "";
     const s = getCurrentSettings(); savedSettings = s;
     const res = await saveSettings(s);
-    if (res.ok) { hideSetup(); document.body.classList.remove("pet-mode"); updateMemoryCount(0); setAutoStart(s.autostart || false); }
+    if (res.ok) { hideSetup(); document.body.classList.remove("pet-mode"); applyTheme(s.theme || "dark"); updateMemoryCount(0); setAutoStart(s.autostart || false); }
     else { document.getElementById("setup-error").textContent = "保存失败：" + (res.error || "未知错误"); b.disabled = false; b.textContent = "💾 保存并开始"; }
 }

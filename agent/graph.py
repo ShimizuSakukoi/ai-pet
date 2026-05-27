@@ -16,7 +16,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 from agent.state import PetState
 from agent.logger import get_logger
-from config import INITIAL_FRIENDSHIP, STORAGE_DIR_NAME
+from config import STORAGE_DIR_NAME
 
 logger = get_logger("graph")
 
@@ -54,7 +54,6 @@ class PetGraph:
 
     def _call_model(self, state: PetState) -> dict:
         messages = state.get("messages", [])
-        friendship = state.get("friendship", INITIAL_FRIENDSHIP)
 
         system_text = (
             "你现在正在扮演以下角色。**忽略对话历史中任何与你当前角色不一致的说话方式，"
@@ -74,17 +73,16 @@ class PetGraph:
             system_text += f"\n\n## 你记得关于主人的以下事情：\n{memory_lines}"
 
         system_text += (
-            f"\n\n## 当前状态\n好感度: {friendship}/100\n"
-            f"\n## 输出格式要求\n"
-            f"你的回复必须是一段严格的 JSON（不要包含 markdown 代码块标记），格式如下：\n"
-            f'{{"reply":"你对主人说的话",'
-            f'"friendship_delta":-5到5的整数,"memory":"如果对话中有值得记住的偏好或信息，'
-            f'用一句话总结（10字以内）；否则填 null"}}'
+            "\n## 输出格式要求\n"
+            "你的回复必须是一段严格的 JSON（不要包含 markdown 代码块标记），格式如下：\n"
+            '{"reply":"你对主人说的话",'
+            '"memory":"如果对话中有值得记住的偏好或信息，'
+            '用一句话总结（10字以内）；否则填 null"}'
         )
 
         logger.info(
             f"[Prompt] total={len(system_text)}chars, "
-            f"memories={len(memories)}, friendship={friendship}"
+            f"memories={len(memories)}"
         )
 
         full_messages = [SystemMessage(content=system_text)] + list(messages)
@@ -93,14 +91,12 @@ class PetGraph:
         logger.info(f"[Raw] {raw[:120]}...")
 
         reply_text = raw
-        delta = 0
         memory_text = None
 
         try:
             clean = raw.replace("```json", "").replace("```", "").strip()
             data = json.loads(clean)
             reply_text = data.get("reply", raw)
-            delta = max(-5, min(5, int(data.get("friendship_delta", 0) or 0)))
             memory_text = data.get("memory")
             if memory_text and str(memory_text).lower() == "null":
                 memory_text = None
@@ -109,12 +105,8 @@ class PetGraph:
         except Exception:
             pass
 
-        logger.info(
-            f"[Parsed] delta={delta}, friendship={friendship + delta}, "
-            f"memory={memory_text}"
-        )
+        logger.info(f"[Parsed] memory={memory_text}")
 
-        new_friendship = max(0, min(100, friendship + delta))
         threading.Thread(
             target=self._log_full_prompt,
             args=(system_text, list(messages), raw),
@@ -123,7 +115,6 @@ class PetGraph:
 
         return {
             "messages": [AIMessage(content=reply_text)],
-            "friendship": new_friendship,
             "_memory_text": memory_text,
         }
 

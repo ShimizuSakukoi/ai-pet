@@ -29,12 +29,12 @@ function startIdleWatcher() {
 
 async function onWelcomeBack() {
     wasAway = false;
-    const result = await petAction("welcome");
-    if (result.text) { addMessage("pet", result.text, true); updateFriendship(result.friendship); notifyPet(result.text); }
+    const result = await petAction("welcome", currentThreadId);
+    if (result.text) { addMessage("pet", result.text, true); notifyPet(result.text); }
 }
 
 async function onIdleChat() {
     if (idleChatSent) return; idleChatSent = true;
-    const result = await petAction("idle");
-    if (result.text) { addMessage("pet", result.text, true); updateFriendship(result.friendship); notifyPet(result.text); }
+    const result = await petAction("idle", currentThreadId);
+    if (result.text) { addMessage("pet", result.text, true); notifyPet(result.text); }
 }

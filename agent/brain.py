@@ -17,7 +17,6 @@ from agent.logger import get_logger
 from config import (
     DEFAULT_PET_NAME,
     DEFAULT_PET_TYPE,
-    INITIAL_FRIENDSHIP,
     STORAGE_DIR_NAME,
 )
 
@@ -62,21 +61,11 @@ class PetBrain:
         logger.info(f"[SetModel] model={model_name}")
 
     def _raw_chat(self, user_text: str, thread_id: str) -> dict:
-        try:
-            current = self.graph.get_state(thread_id)
-            old_friendship = (
-                current.values.get("friendship", INITIAL_FRIENDSHIP)
-                if current and current.values else INITIAL_FRIENDSHIP
-            )
-        except Exception:
-            old_friendship = INITIAL_FRIENDSHIP
-
         result = self.graph.invoke(user_text, thread_id)
 
         if result is None:
             return {
                 "text": "（大脑短路了，再说一遍试试？）",
-                "friendship": old_friendship,
             }
 
         messages = result.get("messages", [])
@@ -88,7 +77,6 @@ class PetBrain:
 
         return {
             "text": ai_text or "……（不知道该说什么）",
-            "friendship": result.get("friendship", old_friendship),
         }
 
     def chat(self, user_text: str, thread_id: str = None) -> dict:
@@ -126,7 +114,6 @@ class PetBrain:
             self.graph._rebuild()
             return {
                 "text": "记忆已全部清除！我们重新认识吧~",
-                "friendship": INITIAL_FRIENDSHIP,
             }
 
     def get_status(self, thread_id: str = None) -> dict:
@@ -134,14 +121,10 @@ class PetBrain:
             current = self.graph.get_state(thread_id or self.model_name)
             if current and current.values:
                 return {
-                    "friendship": current.values.get(
-                        "friendship", INITIAL_FRIENDSHIP
-                    ),
                     "memories_count": self.ltm.get_count(),
                 }
         except Exception:
             pass
         return {
-            "friendship": INITIAL_FRIENDSHIP,
             "memories_count": 0,
         }

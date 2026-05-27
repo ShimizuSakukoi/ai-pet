@@ -56,13 +56,9 @@ MAX_MESSAGES_BEFORE_TRIM = 40   # 对话消息超过此数量时触发裁剪
 MAX_LONG_TERM_MEMORIES = 50     # 长期记忆最多保留条数
 STORAGE_DIR_NAME = "AI-Pet"     # 存储目录名（位于 %APPDATA% 下）
 
-# ==================== 好感度初始值 ====================
-INITIAL_FRIENDSHIP = 30         # 初始好感度（0-100）
-
 # ==================== 互动配置 ====================
 IDLE_CHAT_SECONDS = 600          # 空闲多久触发主动搭话（秒）→ 10 分钟
 IDLE_WELCOME_SECONDS = 300       # 离开多久触发欢迎回来（秒）→ 5 分钟
-FRIENDSHIP_PET_GAIN = 2          # 抚摸奖励好感度增加值
 
 # ==================== 版本 & GitHub ====================
 APP_VERSION = "1.2.0"

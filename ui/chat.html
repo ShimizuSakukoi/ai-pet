@@ -19,7 +19,7 @@
     <div class="chat-window" id="chat-window">
         <!-- 标题栏（拖拽把手 / 窗口拖拽区域） -->
         <div class="chat-header" id="chat-header">
-            <span>💬 聊天</span>
+            <span>💬 聊天 · 记忆: <span id="mem-count">0</span></span>
             <div class="chat-header-btns">
                 <button id="btn-chat-close" title="隐藏窗口">_</button>
             </div>
@@ -48,12 +48,7 @@
 
         <!-- 快捷回复 -->
         <div class="quick-replies" id="quick-replies">
-            <button data-text="在干嘛喵？">在干嘛喵？</button>
-            <button data-text="摸摸头">摸摸头</button>
-            <button data-text="饿了吗">饿了吗</button>
-            <button data-text="不理你了">不理你了</button>
-            <button data-text="讲个笑话">讲个笑话</button>
-            <button data-text="晚安">晚安</button>
+            <button id="btn-refresh-replies" title="换一批">🔄</button>
         </div>
 
         <!-- 输入区 -->
@@ -63,18 +58,9 @@
             <button class="send-btn" id="send-btn">发送</button>
         </div>
 
-        <!-- 状态栏 -->
-        <div class="status-bar">
-            <span>好感度:
-                <span class="friendship-bg">
-                    <span id="friendship-bar" class="friendship-fill"></span>
-                </span>
-            </span>
-            <span>记忆: <span id="mem-count">0</span> 条</span>
         </div>
-    </div>
 
-    <!-- 记忆管理面板 -->
+        <!-- 记忆管理面板 -->
     <div class="mem-overlay" id="mem-overlay" style="display:none;">
         <div class="mem-panel">
             <div class="mem-header">
@@ -98,9 +84,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; -webkit-app-region: drag;">
                 <h2 style="margin: 0;">🐱 AI Pet 设置</h2>
                 <button id="setup-btn-close" title="关闭"
-                        style="background: none; border: 1px solid #333; color: #aaa;
-                               border-radius: 4px; cursor: pointer; font-size: 16px;
-                               padding: 2px 8px; -webkit-app-region: no-drag;">✕</button>
+                        class="setup-close-btn">✕</button>
             </div>
             <p class="subtitle" id="setup-subtitle">首次使用，请配置 LLM 连接</p>
             <div id="setup-step-llm">
@@ -133,6 +117,12 @@
                 <label class="checkbox-label">
                     <input type="checkbox" id="setup-autostart" /> 开机自启
                 </label>
+                <label>主题</label>
+                <select id="setup-theme">
+                    <option value="dark">深色</option>
+                    <option value="light">浅色</option>
+                    <option value="system">跟随系统</option>
+                </select>
                 <button id="setup-btn-save" disabled>💾 保存并开始</button>
                 <div class="error-msg" id="setup-error"></div>
             </div>

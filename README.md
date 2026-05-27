@@ -81,10 +81,6 @@ ai-pet/
 │   │   ├── pet-ui.js       │  触摸命中检测
 │   │   └── lib/            │  第三方库
 │   └── model/
-│       ├── haru/           │  角色：元气少女
-│       │   ├── system.txt  │    安全护栏
-│       │   ├── persona.txt │    角色设定
-│       │   └── interactions.json │ 触摸交互配置
 │       └── dafeng/         │  角色：航空母舰大凤
 │           ├── system.txt  │    安全护栏
 │           ├── persona.txt │    角色设定

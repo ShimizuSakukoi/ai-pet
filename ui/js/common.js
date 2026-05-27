@@ -12,6 +12,8 @@ let providerData = {};
 let MODEL_NAMES = [];
 let currentModelIdx = 0;
 
+let currentThreadId = null;
+
 let lastInteraction = Date.now();
 let idleChatSent = false;
 let wasAway = false;
@@ -32,5 +34,19 @@ const FALLBACK_DEFAULTS = {
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
 function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+
+function applyTheme(theme) {
+    if (theme === "light") {
+        document.body.classList.add("light-theme");
+    } else if (theme === "dark") {
+        document.body.classList.remove("light-theme");
+    } else {
+        const mq = window.matchMedia("(prefers-color-scheme: dark)");
+        document.body.classList.toggle("light-theme", !mq.matches);
+        mq.addEventListener("change", (e) => {
+            document.body.classList.toggle("light-theme", !e.matches);
+        });
+    }
+}
 
 async function getMemCount() { const st = await getStatus(); return st.memories_count || 0; }

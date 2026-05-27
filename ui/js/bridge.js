@@ -54,29 +54,29 @@ async function getProviders() {
  * 发送聊天消息 → 获取 AI 回复
  * @param {string} text - 用户输入
  * @param {string} threadId - 对话线程 ID
- * @returns {{ text: string, friendship: number }}
+ * @returns {{ text: string }}
  */
 async function sendChat(text, threadId) {
     try { return await pywebview.api.chat(text, threadId || null); }
-    catch (_) { return { text: "（连接断开）", friendship: 0 }; }
+    catch (_) { return { text: "（连接断开）" }; }
 }
 
 /**
  * 重置所有记忆（清除长期记忆 + SQLite 对话历史）
- * @returns {{ text: string, friendship: number }}
+ * @returns {{ text: string }}
  */
 async function resetMemory() {
     try { return await pywebview.api.reset(); }
-    catch (_) { return { text: "重置失败", friendship: 0 }; }
+    catch (_) { return { text: "重置失败" }; }
 }
 
 /**
  * 获取当前宠物状态
- * @returns {{ ready: boolean, friendship: number, memories_count: number }}
+ * @returns {{ ready: boolean, memories_count: number }}
  */
 async function getStatus() {
     try { return await pywebview.api.get_status(); }
-    catch (_) { return { ready: false, friendship: 0, memories_count: 0 }; }
+    catch (_) { return { ready: false, memories_count: 0 }; }
 }
 
 // ====== 窗口控制 ======
@@ -110,11 +110,11 @@ async function quitApp() {
 /**
  * 发送特殊互动动作
  * @param {string} actionType - "pet"|"drag"|"welcome"|"idle"
- * @returns {{ text: string, friendship: number, action: string }}
+ * @returns {{ text: string, action: string }}
  */
-async function petAction(actionType) {
-    try { return await pywebview.api.pet_action(actionType); }
-    catch (_) { return { text: "", friendship: 0, action: actionType }; }
+async function petAction(actionType, threadId) {
+    try { return await pywebview.api.pet_action(actionType, threadId || null); }
+    catch (_) { return { text: "", action: actionType }; }
 }
 
 /**
@@ -165,4 +165,14 @@ async function setAutoStart(enable) {
 async function checkUpdate() {
     try { return await pywebview.api.check_update(); }
     catch (_) { return { ok: false, error: "调用失败" }; }
+}
+
+async function generateQuickReplies() {
+    try { return await pywebview.api.generate_quick_replies(); }
+    catch (_) { return { replies: [] }; }
+}
+
+async function getAudio(modelName, audioPath) {
+    try { return await pywebview.api.get_audio(modelName, audioPath); }
+    catch (_) { return null; }
 }
