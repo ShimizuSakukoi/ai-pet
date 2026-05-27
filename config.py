@@ -43,8 +43,7 @@ PROVIDER_MODELS = {
 }
 
 # ==================== 宠物默认设置 ====================
-DEFAULT_PET_NAME = "小橘"      # 默认宠物名字
-DEFAULT_PET_TYPE = "cat"       # 默认宠物类型（cat / dog / alien）
+DEFAULT_PET_NAME = "伙伴"
 
 # ==================== 窗口设置 ====================
 WINDOW_WIDTH = 520              # 窗口宽度（像素）

@@ -23,7 +23,7 @@ logger = get_logger("graph")
 
 class PetGraph:
     def __init__(self, system_rules: str, persona: str, llm, ltm,
-                 pet_name: str = "小橘"):
+                 pet_name: str = ""):
         self._system_rules = system_rules
         self._persona = persona
         self.llm = llm

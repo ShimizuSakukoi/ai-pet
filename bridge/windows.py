@@ -13,39 +13,82 @@ class WindowManager:
     def __init__(self, state):
         self._state = state
 
+    def _model_dir(self):
+        if getattr(sys, "frozen", False):
+            return os.path.join(sys._MEIPASS, "ui", "model")
+        return os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "ui", "model",
+        )
+
     def scan_models(self):
         import json
 
-        if getattr(sys, "frozen", False):
-            model_dir = os.path.join(sys._MEIPASS, "ui", "model")
-        else:
-            model_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "ui", "model",
-            )
+        model_dir = self._model_dir()
         models = []
         if not os.path.isdir(model_dir):
             return []
         try:
             for entry in sorted(os.scandir(model_dir), key=lambda e: e.name):
-                if entry.is_dir():
+                if not entry.is_dir():
+                    continue
+
+                variants_path = os.path.join(entry.path, "variants.json")
+                if os.path.exists(variants_path):
+                    try:
+                        with open(variants_path, "r", encoding="utf-8") as f:
+                            vdata = json.load(f)
+                    except Exception:
+                        vdata = {}
+                    var_list = vdata.get("variants", [])
+                    if not var_list:
+                        continue
+                    shared_interactions = self._load_interactions(entry.path)
+                    for var in var_list:
+                        var_sub = var.get("id", "")
+                        var_label = var.get("label", var_sub)
+                        var_model = var.get("model_file", "")
+                        if not var_model:
+                            continue
+                        var_name = entry.name + "/" + var_sub
+                        var_interactions = self._load_interactions(
+                            os.path.join(entry.path, var_sub)
+                        ) or shared_interactions
+                        models.append({
+                            "name": var_name,
+                            "display": entry.name,
+                            "variant_label": var_label,
+                            "model_file": var_model,
+                            "base_name": entry.name,
+                            "interactions": var_interactions,
+                        })
+                else:
                     for f in os.listdir(entry.path):
                         if f.endswith(".model.json") or f.endswith(".model3.json"):
-                            info = {"name": entry.name, "model_file": f}
-                            interactions_path = os.path.join(
-                                entry.path, "interactions.json"
-                            )
-                            if os.path.exists(interactions_path):
-                                try:
-                                    with open(interactions_path, "r", encoding="utf-8") as fi:
-                                        info["interactions"] = json.load(fi)
-                                except Exception:
-                                    pass
+                            info = {
+                                "name": entry.name,
+                                "display": entry.name,
+                                "model_file": f,
+                                "base_name": entry.name,
+                            }
+                            info["interactions"] = self._load_interactions(entry.path)
                             models.append(info)
                             break
         except Exception:
             pass
         return models
+
+    def _load_interactions(self, dir_path):
+        import json
+
+        path = os.path.join(dir_path, "interactions.json")
+        if not os.path.exists(path):
+            return {}
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
 
     def get_models(self):
         return {"models": self._state.models}
@@ -83,30 +126,43 @@ class WindowManager:
                 pass
         return {"ok": True}
 
-    def switch_model(self, direction):
+    def _switch_to(self, target_idx):
         if not self._state.models:
-            return {"ok": True}
-        self._state.model_index = (
-            (self._state.model_index + int(direction)) % len(self._state.models)
-        )
-        self._state.current_model = self._state.models[self._state.model_index]["name"]
+            return
+        self._state.model_index = target_idx
+        m = self._state.models[target_idx]
+        self._state.current_model = m["name"]
 
         if self._state.pet_window:
             try:
                 self._state.pet_window.evaluate_js(
-                    f"switchModel({int(direction)});"
-                    f"onModelChange({self._state.model_index});"
+                    f"switchToModel('{m['name']}');"
+                    f"onModelChange({target_idx});"
                 )
             except Exception:
                 pass
 
         if self._state.brain:
             try:
-                self._state.brain.set_model(self._state.current_model)
+                self._state.brain.set_model(m["name"], m.get("base_name"))
             except Exception:
                 pass
 
+    def switch_model(self, direction):
+        if not self._state.models:
+            return {"ok": True}
+        idx = (self._state.model_index + int(direction)) % len(self._state.models)
+        self._switch_to(idx)
         return {"ok": True}
+
+    def switch_to_model(self, model_name):
+        if not self._state.models:
+            return {"ok": False}
+        for i, m in enumerate(self._state.models):
+            if m["name"] == model_name:
+                self._switch_to(i)
+                return {"ok": True}
+        return {"ok": False}
 
     def quit_app(self):
         try:

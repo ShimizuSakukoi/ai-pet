@@ -16,7 +16,6 @@ from agent.interaction import InteractionHandler
 from agent.logger import get_logger
 from config import (
     DEFAULT_PET_NAME,
-    DEFAULT_PET_TYPE,
     STORAGE_DIR_NAME,
 )
 
@@ -24,9 +23,8 @@ logger = get_logger("brain")
 
 
 class PetBrain:
-    def __init__(self, pet_type=DEFAULT_PET_TYPE, pet_name=DEFAULT_PET_NAME,
-                 settings=None, model_name="dafeng"):
-        self.pet_type = pet_type
+    def __init__(self, pet_name=DEFAULT_PET_NAME,
+                 settings=None, model_name="taihou"):
         self.pet_name = pet_name
         self.model_name = model_name
         self._settings = settings or {}
@@ -50,15 +48,16 @@ class PetBrain:
             model_name, pet_name, self._raw_chat, self.graph,
         )
 
-    def set_model(self, model_name: str):
+    def set_model(self, model_name: str, base_name: str = None):
         self.model_name = model_name
-        persona_data = load_persona(model_name, self.pet_name)
+        persona_data = load_persona(model_name, self.pet_name, base_name)
         self.graph._system_rules = persona_data["system"]
         self.graph._persona = persona_data["persona"]
         self._interaction = InteractionHandler(
             model_name, self.pet_name, self._raw_chat, self.graph,
+            base_name,
         )
-        logger.info(f"[SetModel] model={model_name}")
+        logger.info(f"[SetModel] model={model_name}, base={base_name}")
 
     def _raw_chat(self, user_text: str, thread_id: str) -> dict:
         result = self.graph.invoke(user_text, thread_id)

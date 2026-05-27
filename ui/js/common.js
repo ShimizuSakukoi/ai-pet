@@ -9,7 +9,7 @@ let currentProvider = "deepseek";
 let savedSettings = null;
 let providerData = {};
 
-let MODEL_NAMES = [];
+let _allModels = [];
 let currentModelIdx = 0;
 
 let currentThreadId = null;
@@ -18,6 +18,16 @@ let lastInteraction = Date.now();
 let idleChatSent = false;
 let wasAway = false;
 let awayStart = 0;
+
+let _audioVolume = parseFloat(localStorage.getItem("pet_audio_volume") || "1.0");
+let _audioMuted = localStorage.getItem("pet_audio_muted") === "true";
+
+function saveAudioState() {
+    localStorage.setItem("pet_audio_volume", String(_audioVolume));
+    localStorage.setItem("pet_audio_muted", String(_audioMuted));
+}
+
+function getCurrentModel() { return _allModels[currentModelIdx] || null; }
 
 const FALLBACK_MODELS = {
     deepseek: ["deepseek-v4-pro", "deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"],

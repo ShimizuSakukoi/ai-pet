@@ -102,24 +102,51 @@ class InteractionBridge:
         except Exception:
             return {"replies": []}
 
-    def get_audio(self, model_name, audio_path):
+    def _resolve_audio_dir(self, model_name, audio_path):
         import sys
-        import base64
+
         if getattr(sys, "frozen", False):
-            audio_dir = os.path.join(sys._MEIPASS, "ui", "model", model_name)
+            base = os.path.join(sys._MEIPASS, "ui", "model")
         else:
-            audio_dir = os.path.join(
+            base = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "ui", "model", model_name
+                "ui", "model",
             )
-        clean_path = audio_path.replace("/", os.sep).replace("\\", os.sep)
-        file_path = os.path.join(audio_dir, clean_path)
+
+        clean = audio_path.replace("/", os.sep).replace("\\", os.sep)
+
+        direct = os.path.join(base, model_name, clean)
+        if os.path.exists(direct):
+            return os.path.join(base, model_name)
+
+        direct_audio = os.path.join(base, model_name, "audio", clean)
+        if os.path.exists(direct_audio):
+            return os.path.join(base, model_name, "audio")
+
+        parts = model_name.replace("\\", "/").split("/")
+        if len(parts) >= 2:
+            fallback = os.path.join(base, parts[0], clean)
+            if os.path.exists(fallback):
+                return os.path.join(base, parts[0])
+            fallback_audio = os.path.join(base, parts[0], "audio", clean)
+            if os.path.exists(fallback_audio):
+                return os.path.join(base, parts[0], "audio")
+
+        return os.path.join(base, model_name)
+
+    def get_audio(self, model_name, audio_path):
+        import base64
+
+        audio_dir = self._resolve_audio_dir(model_name, audio_path)
+        file_path = os.path.join(audio_dir, audio_path.replace("/", os.sep).replace("\\", os.sep))
+        if not os.path.exists(file_path):
+            return {"audio": None, "mime": ""}
         if not os.path.exists(file_path):
             return {"audio": None, "mime": ""}
         try:
             with open(file_path, "rb") as f:
                 data = base64.b64encode(f.read()).decode("utf-8")
-            mime = "audio/mpeg" if file_path.endswith(".mp3") else "audio/wav"
+            mime = "audio/mpeg" if file_path.endswith(".mp3") else "audio/ogg" if file_path.endswith(".ogg") else "audio/wav"
             return {"audio": data, "mime": mime}
         except Exception:
             return {"audio": None, "mime": ""}

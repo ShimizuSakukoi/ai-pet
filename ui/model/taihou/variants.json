@@ -1,0 +1,6 @@
+{
+  "variants": [
+    {"id": "毒苹果", "label": "毒苹果", "model_file": "毒苹果/dafeng_2_hx.model3.json"},
+    {"id": "放学后的甜蜜时光", "label": "放学后的甜蜜时光", "model_file": "放学后的甜蜜时光/dafeng_3.model3.json"}
+  ]
+}

@@ -14,7 +14,7 @@ from agent.logger import get_logger
 logger = get_logger("interaction")
 
 DEFAULT_PROMPTS = {
-    "pet": ["摸一摸", "拍拍头", "轻抚", "戳一戳", "顺毛"],
+    "touch": ["摸一摸", "拍拍头", "轻抚", "戳一戳"],
     "drag": ["拽一下", "拉一把", "拖一拖"],
     "welcome": ["回来了", "等你很久了"],
     "idle": ["有点寂寞", "好久没说话了", "在吗"],
@@ -22,14 +22,16 @@ DEFAULT_PROMPTS = {
 
 
 class InteractionHandler:
-    def __init__(self, model_name: str, pet_name: str, chat_fn, graph):
+    def __init__(self, model_name: str, pet_name: str, chat_fn, graph,
+                 base_name: str = None):
         self.model_name = model_name
         self.pet_name = pet_name
         self._chat_fn = chat_fn
         self._graph = graph
+        self._base_name = base_name
 
     def action(self, action_type: str, thread_id: str = None) -> dict:
-        interactions = load_interactions(self.model_name)
+        interactions = load_interactions(self.model_name, self._base_name)
         prompts = interactions.get("prompts", DEFAULT_PROMPTS)
         variants = prompts.get(action_type, [f"[{action_type}]"])
         msg = random.choice(variants) if variants else f"[{action_type}]"
@@ -70,11 +72,11 @@ class InteractionHandler:
             return {"text": "（今天过得还不错~）"}
 
     def _load_persona(self) -> dict:
-        from agent.personality import load_persona
-        return load_persona(self.model_name, self.pet_name)
+        from agent.personality import load_persona as _lp
+        return _lp(self.model_name, self.pet_name, self._base_name)
 
     def generate_quick_replies(self) -> list:
-        persona_data = load_persona(self.model_name, self.pet_name)
+        persona_data = load_persona(self.model_name, self.pet_name, self._base_name)
         prompt = (
             "你的任务是生成聊天快捷回复按钮的文本。\n\n"
             "聊天对象是以下角色：\n"

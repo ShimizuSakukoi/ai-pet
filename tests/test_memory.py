@@ -18,7 +18,7 @@ def test_search_memory():
     ltm = LongTermMemory()
     ltm.add("主人喜欢喝咖啡不加糖")
     ltm.add("主人在北京工作")
-    ltm.add("主人养了一只猫")
+    ltm.add("主人有一个伙伴")
     results = ltm.search("咖啡", limit=3)
     assert len(results) >= 1
     assert any("咖啡" in r["content"] for r in results)

@@ -5,7 +5,7 @@ agent/ —— 宠物的"大脑"层
 
 子模块：
   state.py       - 定义宠物大脑中的数据结构
-  personality.py - 角色人设模板（猫/狗/外星人…）
+   personality.py - 角色人设模板（可自定义角色身份）
   memory.py      - 长期记忆读写（跨会话记住主人的喜好）
   brain.py       - LangGraph 图定义（核心逻辑编排）
 """

@@ -126,6 +126,23 @@ async function dailyReview() {
     catch (_) { return { text: "", ok: false }; }
 }
 
+// ====== 记忆管理 ======
+
+async function getMemories() {
+    try { return await pywebview.api.get_memories(); }
+    catch (_) { return { memories: [] }; }
+}
+
+async function updateMemory(mid, content) {
+    try { return await pywebview.api.update_memory(mid, content); }
+    catch (_) { return { ok: false }; }
+}
+
+async function deleteMemory(mid) {
+    try { return await pywebview.api.delete_memory(mid); }
+    catch (_) { return { ok: false }; }
+}
+
 // ====== 模型 ======
 
 async function getModels() {
@@ -140,11 +157,20 @@ async function getModels() {
 }
 
 /**
- * 切换宠物窗口的 Live2D 模型
- * @param {number} direction - -1=上一个, 1=下一个
+ * 按方向切换模型（-1=上一个, 1=下一个）
+ * @param {number} direction
  */
 async function switchPetModel(direction) {
     try { return await pywebview.api.switch_model(direction); }
+    catch (_) { return { ok: false }; }
+}
+
+/**
+ * 切换到指定名称的模型（用于变体选择）
+ * @param {string} modelName
+ */
+async function switchToModel(modelName) {
+    try { return await pywebview.api.switch_to_model(modelName); }
     catch (_) { return { ok: false }; }
 }
 

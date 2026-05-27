@@ -8,50 +8,67 @@
  * .model3.json  -> PIXI.live2d.Live2DModel (Cubism 4.x)
  */
 
-/** 动态模型列表，由 pet-ui.js 调用 setModels() 填充 */
-let MODEL_LIST = [];
-currentModelIdx = 0;
 let _pixiApp = null;
+let _currentModelInfo = null;
 
-function setModels(models) {
-    if (!models || !models.length) return;
-    MODEL_LIST = models;
-    currentModelIdx = 0;
-}
-
-/** 根据模型名和文件名构建完整路径 */
+/** 根据模型信息构建完整路径 */
 function _modelPath(m) {
-    return "model/" + m.name + "/" + m.model_file;
+    return "model/" + (m.base_name || m.name) + "/" + m.model_file;
 }
 
 function _isModel3(path) {
     return path && path.indexOf(".model3.json") !== -1;
 }
 
-// ========================================================================
+// ============================================================
 //                           初 始 化 & 切 换
-// ========================================================================
+// ============================================================
 
 function initLive2D() {
-    if (!MODEL_LIST.length) return;
-    const m = MODEL_LIST[currentModelIdx];
-    const btn = document.getElementById("btn-model-name");
-    if (btn) btn.textContent = m.name;
+    if (!_allModels.length) return;
+    const m = _allModels[currentModelIdx];
+    _currentModelInfo = m;
     _doLoadModel(_modelPath(m));
 }
 
 function switchModel(direction) {
-    if (!MODEL_LIST.length) return;
-    currentModelIdx = (currentModelIdx + direction + MODEL_LIST.length) % MODEL_LIST.length;
-    const m = MODEL_LIST[currentModelIdx];
-    const btn = document.getElementById("btn-model-name");
-    if (btn) btn.textContent = m.name;
+    if (!_allModels.length) return;
+    currentModelIdx = (currentModelIdx + direction + _allModels.length) % _allModels.length;
+    const m = _allModels[currentModelIdx];
+    _currentModelInfo = m;
     reloadModel(_modelPath(m));
 }
 
-// ========================================================================
+function switchToModel(modelName) {
+    for (let i = 0; i < _allModels.length; i++) {
+        if (_allModels[i].name === modelName) {
+            currentModelIdx = i;
+            const m = _allModels[i];
+            _currentModelInfo = m;
+            reloadModel(_modelPath(m));
+            return;
+        }
+    }
+    console.warn("[Live2D] 模型未在列表中，尝试重新获取:", modelName);
+    getModels().then(result => {
+        if (result.models && result.models.length) {
+            _allModels = result.models;
+            for (let i = 0; i < _allModels.length; i++) {
+                if (_allModels[i].name === modelName) {
+                    currentModelIdx = i;
+                    _currentModelInfo = _allModels[i];
+                    reloadModel(_modelPath(_allModels[i]));
+                    return;
+                }
+            }
+            console.warn("[Live2D] 重新获取后仍未找到:", modelName);
+        }
+    });
+}
+
+// ============================================================
 //                        模 型 重 载
-// ========================================================================
+// ============================================================
 
 function _teardownPixi() {
     if (_pixiApp) {
@@ -80,9 +97,9 @@ function reloadModel(path) {
     _doLoadModel(path + "?" + Date.now());
 }
 
-// ========================================================================
+// ============================================================
 //                Cubism 4.x 模型加载 (pixi-live2d-display)
-// ========================================================================
+// ============================================================
 
 async function _loadModel3(fullPath) {
     if (typeof PIXI === "undefined" || !PIXI.live2d) {
@@ -125,9 +142,9 @@ async function _loadModel3(fullPath) {
     }
 }
 
-// ========================================================================
+// ============================================================
 //                   Cubism 2.x 模型加载 (L2Dwidget)
-// ========================================================================
+// ============================================================
 
 function _loadModel2(fullPath) {
     try {
@@ -162,9 +179,9 @@ function _doLoadModel(fullPath) {
     }
 }
 
-// ========================================================================
+// ============================================================
 //                      Fallback 回退
-// ========================================================================
+// ============================================================
 
 function showFallbackPet() {
     const modelArea = document.querySelector(".model-area") || document.querySelector(".pet-container");
@@ -172,15 +189,15 @@ function showFallbackPet() {
         if (!modelArea.querySelector(".fallback-pet")) {
             const div = document.createElement("div");
             div.className = "fallback-pet";
-            div.textContent = "🐱";
+            div.textContent = "\u{1F431}";
             modelArea.appendChild(div);
         }
     }
 }
 
-// ========================================================================
+// ============================================================
 //                     Motion 播放
-// ========================================================================
+// ============================================================
 
 function playMotion(name) {
     if (typeof L2Dwidget !== "undefined") {

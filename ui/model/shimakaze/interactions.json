@@ -4,17 +4,25 @@
       "id": "head",
       "hit": [0.25, 0.00, 0.50, 0.30],
       "trigger": "dblclick",
-      "action": "pet",
+      "action": "touch",
       "motion": "touch_head",
-      "audio": []
+      "audio": [
+        "不思议国度的白兔_Touch.ogg",
+        "不思议国度的白兔_SpecialTouch.ogg"
+      ]
     },
     {
       "id": "body",
       "hit": [0.15, 0.30, 0.70, 0.50],
       "trigger": "dblclick",
-      "action": "pet",
+      "action": "touch",
       "motion": "touch_body",
-      "audio": []
+      "audio": [
+        "不思议国度的白兔_Touch.ogg",
+        "不思议国度的白兔_Idle1.ogg",
+        "不思议国度的白兔_Idle2.ogg",
+        "不思议国度的白兔_Idle3.ogg"
+      ]
     },
     {
       "id": "full",
@@ -22,19 +30,21 @@
       "trigger": "drag",
       "action": "drag",
       "motion": "touch_special",
-      "audio": []
+      "audio": [
+        "不思议国度的白兔_Touch.ogg",
+        "不思议国度的白兔_SpecialTouch.ogg"
+      ]
     }
   ],
   "idle_timeout": 600,
   "welcome_timeout": 300,
   "prompts": {
-    "pet": [
+    "touch": [
       "摸一摸",
       "拍拍头",
       "轻抚",
       "揉一揉",
       "戳一戳",
-      "顺毛",
       "捏捏脸",
       "摸摸耳朵",
       "点一点",

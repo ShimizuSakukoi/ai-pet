@@ -40,7 +40,7 @@ class BridgeState:
         self.on_top = False
         self.settings = {}
         self.models = []
-        self.current_model = "dafeng"
+        self.current_model = "taihou"
         self.model_index = 0
         self.storage = storage_dir
         self.last_review_date = None
@@ -92,6 +92,9 @@ class BridgeHandler:
 
     def switch_model(self, direction):
         return self.windows.switch_model(direction)
+
+    def switch_to_model(self, model_name):
+        return self.windows.switch_to_model(model_name)
 
     def quit_app(self):
         return self.windows.quit_app()

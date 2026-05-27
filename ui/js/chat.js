@@ -4,14 +4,70 @@
  * 依赖：bridge.js, common.js, message.js, idle.js, voice.js,
  *        notify.js, memory-panel.js, setup-ui.js
  */
-let _allModels = [];
+
+function modelLabel(m) {
+    if (!m) return "";
+    if (m.variant_label) return m.display + " · " + m.variant_label;
+    return m.display || m.name;
+}
+
+function getVariantModels() {
+    const cur = getCurrentModel();
+    if (!cur || !cur.base_name) return [];
+    return _allModels.filter(m => m.base_name === cur.base_name);
+}
+
+function showVariantMenu() {
+    const variants = getVariantModels();
+    if (variants.length < 1) return;
+    const menu = document.getElementById("variant-menu");
+    menu.innerHTML = "";
+    variants.forEach((v) => {
+        const item = document.createElement("div");
+        item.className = "variant-item";
+        item.textContent = v.variant_label || v.display || v.name;
+        if (v.name === (getCurrentModel() || {}).name) {
+            item.classList.add("variant-active");
+        }
+        item.addEventListener("click", (e) => {
+            e.stopPropagation();
+            onSelectVariant(v.name);
+            menu.style.display = "none";
+        });
+        menu.appendChild(item);
+    });
+    const btn = document.getElementById("btn-model-name");
+    const rect = btn.getBoundingClientRect();
+    menu.style.left = rect.left + "px";
+    menu.style.top = (rect.bottom + 2) + "px";
+    menu.style.display = "block";
+    setTimeout(() => {
+        document.addEventListener("click", function closeMenu() {
+            menu.style.display = "none";
+            document.removeEventListener("click", closeMenu);
+        }, { once: true });
+    }, 10);
+}
+
+async function onSelectVariant(modelName) {
+    for (let i = 0; i < _allModels.length; i++) {
+        if (_allModels[i].name === modelName) { currentModelIdx = i; break; }
+    }
+    await switchToModel(modelName);
+    const m = getCurrentModel();
+    if (m) {
+        document.getElementById("btn-model-name").textContent = modelLabel(m);
+        updateIdleConfig(m.interactions);
+    }
+    newConversation();
+    addMessage("system", "已切换至 " + modelLabel(m));
+}
 
 function updateModelBtn(direction) {
-    currentModelIdx = (currentModelIdx + direction + MODEL_NAMES.length) % MODEL_NAMES.length;
-    document.getElementById("btn-model-name").textContent = MODEL_NAMES[currentModelIdx];
-    if (_allModels[currentModelIdx]) {
-        updateIdleConfig(_allModels[currentModelIdx].interactions);
-    }
+    currentModelIdx = (currentModelIdx + direction + _allModels.length) % _allModels.length;
+    const m = _allModels[currentModelIdx];
+    document.getElementById("btn-model-name").textContent = modelLabel(m);
+    if (m) updateIdleConfig(m.interactions);
 }
 
 async function sendMessage() {
@@ -69,8 +125,10 @@ function bindEvents() {
     document.getElementById("btn-new-chat").addEventListener("click", newConversation);
     document.getElementById("btn-chat-close").addEventListener("click", () => { try { pywebview.api.window_minimize().catch(() => {}); } catch (_) {} });
 
-    document.getElementById("btn-model-prev").addEventListener("click", () => { switchPetModel(-1); updateModelBtn(-1); newConversation(); addMessage("system", `已切换到 ${MODEL_NAMES[currentModelIdx]}`); });
-    document.getElementById("btn-model-next").addEventListener("click", () => { switchPetModel(1); updateModelBtn(1); newConversation(); addMessage("system", `已切换到 ${MODEL_NAMES[currentModelIdx]}`); });
+    document.getElementById("btn-model-prev").addEventListener("click", () => { switchPetModel(-1); updateModelBtn(-1); newConversation(); addMessage("system", "已切换到 " + modelLabel(_allModels[currentModelIdx])); });
+    document.getElementById("btn-model-next").addEventListener("click", () => { switchPetModel(1); updateModelBtn(1); newConversation(); addMessage("system", "已切换到 " + modelLabel(_allModels[currentModelIdx])); });
+
+    document.getElementById("btn-model-name").addEventListener("click", (e) => { e.stopPropagation(); showVariantMenu(); });
 
     document.getElementById("btn-minimize").addEventListener("click", () => { try { pywebview.api.window_minimize().catch(() => {}); } catch (_) {} });
     document.getElementById("btn-quit").addEventListener("click", () => quitApp());
@@ -90,6 +148,19 @@ function bindEvents() {
     initVoice();
     document.getElementById("btn-voice").addEventListener("click", toggleVoice);
 
+    document.getElementById("btn-mute").addEventListener("click", () => {
+        _audioMuted = !_audioMuted;
+        document.getElementById("btn-mute").textContent = _audioMuted ? "🔇" : "🔊";
+        saveAudioState();
+    });
+    const volSlider = document.getElementById("volume-slider");
+    volSlider.addEventListener("input", () => {
+        _audioVolume = parseInt(volSlider.value) / 100;
+        saveAudioState();
+    });
+    volSlider.value = Math.round(_audioVolume * 100);
+    document.getElementById("btn-mute").textContent = _audioMuted ? "🔇" : "🔊";
+
     document.addEventListener("click", () => recordActivity());
     document.addEventListener("keydown", () => recordActivity());
 
@@ -103,10 +174,11 @@ window.addEventListener("load", async () => {
     const modelsResult = await getModels();
     if (modelsResult.models && modelsResult.models.length) {
         _allModels = modelsResult.models;
-        MODEL_NAMES = _allModels.map(m => m.name);
-        currentThreadId = MODEL_NAMES[0] + "_" + Date.now();
-        document.getElementById("btn-model-name").textContent = MODEL_NAMES[0];
-        if (_allModels[0]) updateIdleConfig(_allModels[0].interactions);
+        currentModelIdx = 0;
+        const m = _allModels[0];
+        currentThreadId = m.name + "_" + Date.now();
+        document.getElementById("btn-model-name").textContent = modelLabel(m);
+        if (m) updateIdleConfig(m.interactions);
     }
 
     const p = await getProviders();

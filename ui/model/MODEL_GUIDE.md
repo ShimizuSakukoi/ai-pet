@@ -2,7 +2,9 @@
 
 新角色只需放入 `ui/model/` 下即可自动识别，无需修改任何其他文件。
 
-## 目录结构
+## 基础结构（单模型）
+
+没有变体的角色使用以下扁平结构：
 
 ```
 ui/model/新角色名/
@@ -24,6 +26,51 @@ ui/model/新角色名/
     ├── touch_body.motion3.json
     └── touch_special.motion3.json
 ```
+
+## 多形态/多皮肤结构（变体）
+
+同一角色有不同服装或形态时，在角色根目录添加 `variants.json`，
+每个变体的 Live2D 文件放入独立子目录，`persona.txt` / `system.txt` / `interactions.json` 放在根目录共享。
+
+```
+ui/model/新角色名/
+├── persona.txt               # [必须] 共享：性格设定
+├── system.txt                # [必须] 共享：安全护栏
+├── interactions.json         # [必须] 共享：触摸交互
+├── variants.json             # [必须] 变体清单（见下方格式）
+├── default/                  # 变体1：默认形态
+│   ├── 模型.model3.json
+│   ├── 模型.moc3
+│   ├── 模型.physics3.json
+│   ├── audio/
+│   ├── textures/
+│   └── motions/
+└── skin2/                    # 变体2：另一形态
+    ├── 模型.model3.json
+    ├── 模型.moc3
+    ├── textures/
+    └── motions/
+```
+
+每个变体子目录可选择性覆盖 `interactions.json`（如特定皮肤有专属触摸动作），
+未覆盖则自动继承根目录的共享文件。
+
+### variants.json 格式
+
+```json
+{
+  "variants": [
+    {"id": "default", "label": "默认", "model_file": "default/模型.model3.json"},
+    {"id": "skin2", "label": "皮肤2", "model_file": "skin2/模型.model3.json"}
+  ]
+}
+```
+
+| 字段 | 说明 |
+|---|---|
+| `id` | 变体标识，用于内部唯一名 `角色名/id` |
+| `label` | 在切换菜单中显示的名称 |
+| `model_file` | 相对于角色根目录的 `.model3.json` 路径 |
 
 ## interactions.json 格式
 
@@ -97,10 +144,10 @@ ui/model/新角色名/
 ## persona.txt 示例
 
 ```
-你是一位名叫{name}的傲娇猫娘。
-外表：银色长发，猫耳，异色瞳（左蓝右金）。
-性格：傲娇、毒舌但内心关心主人，喜欢被摸头但嘴上说讨厌。
-说话风格：句尾带"喵"，偶尔夹杂日语，语气娇蛮。
+你是一位名叫{name}的温柔大姐姐。
+外表：黑色长发，紫色眼眸，常穿白色连衣裙。
+性格：温柔体贴，偶尔腹黑，喜欢照顾人。
+说话风格：轻声细语，偶尔调戏主人。
 ```
 
 ## system.txt 示例

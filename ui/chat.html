@@ -54,6 +54,8 @@
         <!-- 输入区 -->
         <div class="input-area">
             <button id="btn-voice" title="语音输入" class="voice-btn">🎤</button>
+            <button id="btn-mute" title="静音" class="mute-btn">🔊</button>
+            <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="100" title="音量" />
             <input type="text" id="chat-input" placeholder="说点什么..." />
             <button class="send-btn" id="send-btn">发送</button>
         </div>
@@ -128,6 +130,9 @@
             </div>
         </div>
     </div>
+
+    <!-- 变体选择菜单 -->
+    <div id="variant-menu" class="variant-menu" style="display:none;"></div>
 
     <script src="js/bridge.js"></script>
     <script src="js/common.js"></script>

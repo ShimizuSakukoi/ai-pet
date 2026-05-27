@@ -5,7 +5,8 @@
  */
 function addMessage(role, content, withSpeak) {
     const chatArea = document.getElementById("chat-area");
-    const modelName = MODEL_NAMES[currentModelIdx] || "Pet";
+    const m = getCurrentModel();
+    const modelName = m ? (m.display || m.name) : "Pet";
     const prefix = role === "user" ? "你: " : role === "pet" ? modelName + ": " : role === "system" ? "⚡ " : "";
     const d = document.createElement("div");
     d.className = `message ${role}`;
@@ -23,7 +24,8 @@ function updateMemoryCount(c) {
 function newConversation() {
     if (isWaiting) return;
     document.getElementById("chat-area").innerHTML = "";
-    currentThreadId = (MODEL_NAMES[currentModelIdx] || "pet") + "_" + Date.now();
+    const m = getCurrentModel();
+    currentThreadId = (m ? m.name : "pet") + "_" + Date.now();
     addMessage("system", "新对话开始~");
     idleChatSent = false;
     wasAway = false;

@@ -17,6 +17,13 @@ class SettingsManager:
     def __init__(self, state):
         self._state = state
 
+    def _default_pet_name(self):
+        name = self._state.current_model
+        for m in self._state.models:
+            if m["name"] == name:
+                return m["display"]
+        return (name or "").split("/")[0]
+
     def load_settings(self):
         path = os.path.join(self._state.storage, "settings.json")
         if not os.path.exists(path):
@@ -31,8 +38,7 @@ class SettingsManager:
         self._state.settings = settings
         try:
             self._state.brain = PetBrain(
-                pet_type=settings.get("pet_type", "cat"),
-                pet_name=settings.get("pet_name", self._state.current_model),
+                pet_name=settings.get("pet_name") or self._default_pet_name(),
                 settings=settings,
                 model_name=self._state.current_model,
             )
@@ -62,8 +68,7 @@ class SettingsManager:
 
         try:
             self._state.brain = PetBrain(
-                pet_type=settings.get("pet_type", "cat"),
-                pet_name=settings.get("pet_name", self._state.current_model),
+                pet_name=settings.get("pet_name") or self._default_pet_name(),
                 settings=settings,
                 model_name=self._state.current_model,
             )

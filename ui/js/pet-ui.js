@@ -29,7 +29,7 @@ async function tryLoadModel() {
     if (_modelLoaded) return;
     const result = await getModels();
     if (result.models && result.models.length) {
-        setModels(result.models);
+        _allModels = result.models;
         const m = result.models[0];
         _interactions = m.interactions || {};
         _currentZones = _interactions.zones || [];
@@ -39,8 +39,8 @@ async function tryLoadModel() {
 }
 
 function onModelChange(modelIndex) {
-    if (MODEL_LIST && MODEL_LIST[modelIndex]) {
-        _interactions = MODEL_LIST[modelIndex].interactions || {};
+    if (_allModels && _allModels[modelIndex]) {
+        _interactions = _allModels[modelIndex].interactions || {};
         _currentZones = _interactions.zones || [];
     }
 }
@@ -110,11 +110,18 @@ function hitTest(e) {
 function playZoneAudio(audioList) {
     if (!audioList || !audioList.length) return;
     if (typeof audioList === "string") audioList = [audioList];
+
+    _audioVolume = parseFloat(localStorage.getItem("pet_audio_volume") || "1.0");
+    _audioMuted = localStorage.getItem("pet_audio_muted") === "true";
+    if (_audioMuted || _audioVolume <= 0) return;
+
     const pick = audioList[Math.floor(Math.random() * audioList.length)];
-    const currentModel = MODEL_NAMES[currentModelIdx] || "dafeng";
-    getAudio(currentModel, pick).then(res => {
+    const m = _allModels[currentModelIdx];
+    const audioDir = m ? m.name : "taihou";
+    getAudio(audioDir, pick).then(res => {
         if (res && res.audio) {
             const audio = new Audio("data:" + res.mime + ";base64," + res.audio);
+            audio.volume = _audioVolume;
             audio.play().catch(() => {});
         }
     });

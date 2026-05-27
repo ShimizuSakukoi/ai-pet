@@ -1,0 +1,62 @@
+{
+  "zones": [
+    {
+      "id": "head",
+      "hit": [0.25, 0.00, 0.50, 0.30],
+      "trigger": "dblclick",
+      "action": "touch",
+      "motion": "touch_head",
+      "audio": []
+    },
+    {
+      "id": "body",
+      "hit": [0.15, 0.30, 0.70, 0.50],
+      "trigger": "dblclick",
+      "action": "touch",
+      "motion": "touch_body",
+      "audio": []
+    },
+    {
+      "id": "full",
+      "hit": [0, 0, 1, 1],
+      "trigger": "drag",
+      "action": "drag",
+      "motion": "touch_special",
+      "audio": []
+    }
+  ],
+  "idle_timeout": 600,
+  "welcome_timeout": 300,
+  "prompts": {
+    "touch": [
+      "摸一摸",
+      "拍拍头",
+      "轻抚",
+      "揉一揉",
+      "戳一戳",
+      "捏捏脸",
+      "摸摸耳朵",
+      "点一点",
+      "碰一下"
+    ],
+    "drag": [
+      "拽一下",
+      "拉一把",
+      "拖一拖",
+      "挪挪位置"
+    ],
+    "welcome": [
+      "回来了",
+      "等你很久了",
+      "欢迎回来",
+      "刚才去哪了"
+    ],
+    "idle": [
+      "有点寂寞",
+      "好久没说话了",
+      "在吗",
+      "发发呆",
+      "无聊了"
+    ]
+  }
+}
