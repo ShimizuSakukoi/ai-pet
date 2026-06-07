@@ -1,13 +1,13 @@
 """
-项目入口 —— 启动双窗口桌面宠物
+项目入口 —— 启动双窗口桌面角色
 ================================
 两个独立的 frameless 窗口：
-  1. 宠物窗口（pet.html）：Live2D 角色，easy_drag 整个窗口可拖拽
+  1. 角色窗口（pet.html）：Live2D 角色，easy_drag 整个窗口可拖拽
   2. 聊天窗口（chat.html）：对话 & 设置 & 记忆管理，标题栏可拖拽
 
 启动流程：
   1. 创建 BridgeHandler
-  2. 创建宠物窗口（400×520）
+  2. 创建角色窗口（400×520）
   3. 创建聊天窗口（420×560）
   4. 启动系统托盘（独立线程）
   5. 进入 webview 事件循环
@@ -75,7 +75,11 @@ def main():
     handler._state.pet_window = pet_window
     handler._state.chat_window = chat_window
 
-    tray_thread = threading.Thread(target=run_tray, args=(handler,), daemon=True)
+    windows_ready = threading.Event()
+    windows_ready.set()
+    tray_thread = threading.Thread(
+        target=run_tray, args=(handler, windows_ready), daemon=True,
+    )
     tray_thread.start()
 
     webview.start(debug=False)

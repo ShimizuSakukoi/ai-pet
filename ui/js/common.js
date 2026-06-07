@@ -21,10 +21,14 @@ let awayStart = 0;
 
 let _audioVolume = parseFloat(localStorage.getItem("pet_audio_volume") || "1.0");
 let _audioMuted = localStorage.getItem("pet_audio_muted") === "true";
+let _touchAudioEnabled = localStorage.getItem("pet_touch_audio") !== "false";
+let _touchReplyEnabled = localStorage.getItem("pet_touch_reply") !== "false";
 
 function saveAudioState() {
     localStorage.setItem("pet_audio_volume", String(_audioVolume));
     localStorage.setItem("pet_audio_muted", String(_audioMuted));
+    localStorage.setItem("pet_touch_audio", String(_touchAudioEnabled));
+    localStorage.setItem("pet_touch_reply", String(_touchReplyEnabled));
 }
 
 function getCurrentModel() { return _allModels[currentModelIdx] || null; }

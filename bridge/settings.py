@@ -1,15 +1,14 @@
 """
-Settings Manager —— 配置存取 & LLM 连接测试
+Settings Manager —— 配置存取 & Brain 生命周期
 ============================================
-负责 settings.json 读写、Agent 初始化和连接测试。
+负责 settings.json 读写、PetBrain 实例化。
 """
-
 import os
 import json
 
 from agent.brain import PetBrain
-from agent.llm import build_llm_from_settings
 from bridge.utils import safe_err
+from bridge import connection as _conn
 from config import LLM_PROVIDERS, PROVIDER_MODELS
 
 
@@ -48,7 +47,6 @@ class SettingsManager:
                     self._state.chat_window.on_top = self._state.on_top
                 except Exception:
                     pass
-            print(f"[load_settings] model={self._state.current_model}", flush=True)
             return {"ok": True, "settings": settings, "ready": True}
         except Exception as e:
             import traceback
@@ -83,12 +81,7 @@ class SettingsManager:
             return {"ok": False, "error": safe_err(e)}
 
     def test_connection(self, settings):
-        try:
-            llm = build_llm_from_settings(settings)
-            resp = llm.invoke("请回复一个字：嗨")
-            return {"ok": True, "test_reply": resp.content.strip()}
-        except Exception as e:
-            return {"ok": False, "error": safe_err(e)}
+        return _conn.test_connection(settings)
 
     def get_providers(self):
         return {"providers": {

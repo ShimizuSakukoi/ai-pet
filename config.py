@@ -60,5 +60,5 @@ IDLE_CHAT_SECONDS = 600          # 空闲多久触发主动搭话（秒）→ 10
 IDLE_WELCOME_SECONDS = 300       # 离开多久触发欢迎回来（秒）→ 5 分钟
 
 # ==================== 版本 & GitHub ====================
-APP_VERSION = "1.2.0"
+APP_VERSION = "V1.4"
 GITHUB_REPO = "ShimizuSakukoi/ai-pet"

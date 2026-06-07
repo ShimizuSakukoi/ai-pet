@@ -1,0 +1,140 @@
+/* ================================================================
+   panels.css — 设置面板 + 记忆面板 + 日记面板 + overlay
+   ================================================================ */
+
+/* ---- overlay通用 ---- */
+.overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(10, 8, 20, 0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; -webkit-app-region: no-drag;
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.panel {
+    background: var(--bg-surface); backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 20px 24px; max-height: 85vh; overflow-y: auto;
+    box-shadow: var(--shadow); -webkit-app-region: no-drag;
+}
+.panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px; -webkit-app-region: drag;
+}
+.panel-header h2 { color: var(--primary); font-size: 17px; margin: 0; }
+.panel-close {
+    background: none; border: none; color: var(--text-secondary);
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    font-size: 16px; display: flex; align-items: center; justify-content: center;
+    transition: var(--transition); -webkit-app-region: no-drag;
+}
+.panel-close:hover { background: var(--bg-hover); color: var(--primary); }
+
+/* ---- 设置面板 ---- */
+.setup-panel { width: 380px; }
+.setup-section {
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.setup-section:last-child { border-bottom: none; margin-bottom: 0; }
+.setup-title {
+    color: var(--primary); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.setup-row { display: flex; align-items: center; justify-content: space-between; margin: 6px 0; }
+.setup-row label { font-size: 12px; color: var(--text-secondary); flex: 1; }
+.setup-row select, .setup-row input[type="text"], .setup-row input[type="password"] {
+    padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--bg-input); color: var(--text-primary); font-size: 12px; outline: none;
+    flex: 1; min-width: 0; transition: var(--transition);
+}
+.setup-row select:focus, .setup-row input:focus { border-color: var(--primary); }
+.setup-row input[type="range"] {
+    accent-color: var(--primary); width: 80px; cursor: pointer;
+}
+.btn {
+    padding: 8px 18px; border: none; border-radius: var(--radius);
+    font-size: 13px; cursor: pointer; transition: var(--transition);
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-secondary {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+.btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+.btn-full { width: 100%; margin-top: 8px; }
+
+/* toggle开关 */
+.toggle {
+    position: relative; width: 44px; height: 24px; cursor: pointer; flex-shrink: 0;
+}
+.toggle input { display: none; }
+.toggle-track {
+    display: block; width: 100%; height: 100%; border-radius: 12px;
+    background: var(--border); transition: var(--transition);
+}
+.toggle input:checked + .toggle-track { background: var(--primary); }
+.toggle-thumb {
+    position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
+    border-radius: 50%; background: #fff; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
+
+.key-row { display: flex; gap: 6px; }
+.key-row input { flex: 1; }
+.key-row button { width: 34px; flex-shrink: 0; }
+
+/* ---- 记忆面板 ---- */
+.mem-panel { width: 400px; }
+.mem-add-row { display: flex; gap: 6px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
+.mem-add-row input {
+    flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--bg-input); color: var(--text-primary); font-size: 12px; outline: none;
+}
+.mem-add-row select {
+    padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--bg-input); color: var(--text-secondary); font-size: 11px; outline: none;
+}
+.mem-list { flex: 1; overflow-y: auto; max-height: 40vh; }
+.mem-item {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 10px 0; border-bottom: 1px solid var(--border-subtle); gap: 8px;
+}
+.mem-item:last-child { border-bottom: none; }
+.mem-content { flex: 1; font-size: 13px; color: var(--text-primary); }
+.mem-meta { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+.mem-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.mem-actions button {
+    background: none; border: none; color: var(--text-muted);
+    padding: 2px 6px; cursor: pointer; border-radius: 4px; font-size: 11px;
+    transition: var(--transition);
+}
+.mem-actions button:hover { color: var(--primary); }
+.mem-actions button.del-btn:hover { color: #f44336; }
+.mem-score-bar { display: inline-block; width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin-right: 6px; vertical-align: middle; overflow: hidden; }
+.mem-score-fill { display: block; height: 100%; border-radius: 2px; }
+.mem-layer-tag { font-size: 10px; padding: 2px 7px; border-radius: 8px; color: #fff; flex-shrink: 0; }
+
+/* ---- 日记面板 ---- */
+.diary-panel { width: 400px; }
+.diary-entry {
+    background: var(--bubble-pet); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px;
+    font-size: 13px; line-height: 1.6; color: var(--text-primary); font-style: italic;
+}
+.diary-entry .diary-date { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-style: normal; }
+
+/* ---- toast ---- */
+.toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    padding: 8px 20px; border-radius: var(--radius-xl); background: var(--bg-elevated);
+    border: 1px solid var(--primary); color: var(--text-primary);
+    font-size: 12px; z-index: 300; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+}
+.toast.show { opacity: 1; }
+
+.hidden { display: none !important; }

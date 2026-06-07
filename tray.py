@@ -23,31 +23,39 @@ def create_tray_icon():
     return img
 
 
-def run_tray(handler):
+def run_tray(handler, windows_ready=None):
     import pystray
+    from agent.logger import get_logger
+
+    logger = get_logger("tray")
+    if windows_ready:
+        windows_ready.wait()
 
     def on_show(icon, item):
         try:
             handler.window_show()
         except Exception:
-            pass
+            logger.warning("tray on_show失败", exc_info=True)
 
     def on_hide(icon, item):
         try:
             handler._state.chat_window.hide()
             handler._state.pet_window.hide()
         except Exception:
-            pass
+            logger.warning("tray on_hide失败", exc_info=True)
 
     def on_toggle_top(icon, item):
         try:
             handler.toggle_on_top()
         except Exception:
-            pass
+            logger.warning("tray toggle_on_top失败", exc_info=True)
 
     def on_quit(icon, item):
         icon.stop()
-        handler.quit_app()
+        try:
+            handler.quit_app()
+        except Exception:
+            logger.warning("tray quit失败", exc_info=True)
 
     icon = pystray.Icon(
         "ai-pet",

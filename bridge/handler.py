@@ -21,6 +21,8 @@ from bridge.settings import SettingsManager
 from bridge.windows import WindowManager
 from bridge.memory_api import MemoryController
 from bridge.interaction import InteractionBridge
+from bridge import models as _models
+from bridge import autostart as _autostart
 from agent.logger import get_logger
 
 logger = get_logger("handler")
@@ -57,9 +59,9 @@ class BridgeHandler:
         self.memory = MemoryController(self._state)
         self._interaction = InteractionBridge(self._state)
 
-        models = self.windows.scan_models()
+        models = _models.scan_models()
         self._state.models = models
-        self._state.current_model = models[0]["name"] if models else None
+        self._state.current_model = models[0]["name"] if models else "taihou"
 
     # ── Settings proxy ──
     def load_settings(self):
@@ -76,7 +78,7 @@ class BridgeHandler:
 
     # ── Windows proxy ──
     def get_models(self):
-        return self.windows.get_models()
+        return {"models": self._state.models}
 
     def toggle_on_top(self):
         return self.windows.toggle_on_top()
@@ -91,19 +93,45 @@ class BridgeHandler:
         return self.windows.window_move(x, y)
 
     def switch_model(self, direction):
-        return self.windows.switch_model(direction)
+        if not self._state.models:
+            return {"ok": False, "error": "no models available"}
+        idx = (self._state.model_index + int(direction)) % len(self._state.models)
+        self._switch_model_to(idx)
+        return {"ok": True}
+
+    def _switch_model_to(self, target_idx):
+        self._state.model_index = target_idx
+        m = self._state.models[target_idx]
+        self._state.current_model = m["name"]
+        if self._state.pet_window:
+            try:
+                self._state.pet_window.evaluate_js(
+                    f"switchToModel('{m['name']}');"
+                    f"onModelChange({target_idx});"
+                )
+            except Exception:
+                pass
+        if self._state.brain:
+            try:
+                self._state.brain.set_model(m["name"], m.get("base_name"))
+            except Exception:
+                pass
 
     def switch_to_model(self, model_name):
-        return self.windows.switch_to_model(model_name)
+        for i, m in enumerate(self._state.models):
+            if m["name"] == model_name:
+                self._switch_model_to(i)
+                return {"ok": True}
+        return {"ok": False}
 
     def quit_app(self):
         return self.windows.quit_app()
 
     def get_autostart(self):
-        return self.windows.get_autostart()
+        return _autostart.get_autostart()
 
     def set_autostart(self, enable):
-        return self.windows.set_autostart(enable)
+        return _autostart.set_autostart(enable)
 
     # ── Memory proxy ──
     def get_memories(self):
@@ -114,6 +142,15 @@ class BridgeHandler:
 
     def update_memory(self, mid, content):
         return self.memory.update_memory(mid, content)
+
+    def add_memory(self, content, layer="episodic"):
+        return self.memory.add_memory(content, layer)
+
+    def promote_memory(self, mid):
+        return self.memory.promote_memory(mid)
+
+    def delete_all_memories(self):
+        return self.memory.delete_all_memories()
 
     # ── Interaction proxy ──
     def chat(self, text, thread_id=None):
@@ -136,6 +173,12 @@ class BridgeHandler:
 
     def generate_quick_replies(self):
         return self._interaction.generate_quick_replies()
+
+    def generate_diary(self):
+        return self._interaction.generate_diary()
+
+    def get_diary_entries(self):
+        return self._interaction.get_diary_entries()
 
     def get_audio(self, model_name, audio_path):
         return self._interaction.get_audio(model_name, audio_path)

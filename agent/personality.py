@@ -18,6 +18,9 @@
 
 import os
 import json
+import logging
+
+_log = logging.getLogger("agent.personality")
 
 
 def _get_model_base():
@@ -55,6 +58,7 @@ def load_interactions(model_name: str, base_name: str = None) -> dict:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception:
+        _log.warning("interactions.json 加载失败: %s", path, exc_info=True)
         return {}
 
 
@@ -78,7 +82,7 @@ def load_persona(model_name: str, pet_name: str, base_name: str = None) -> dict:
                 with open(path, "r", encoding="utf-8") as f:
                     content = f.read()
             except Exception:
-                pass
+                _log.warning("persona文件读取失败: %s", path, exc_info=True)
 
         if not content:
             continue

@@ -1,147 +1,144 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<!--
-  聊天窗口 — 对话 & 设置独立窗口
-  ============================================================
-  职责：LLM 对话、设置面板、记忆管理、状态栏
-  通信：通过 bridge.js → pywebview.api → handler.py → PetBrain
-  回复内容由本窗口直接显示；双击宠物时回复由 handler 推送过来
--->
+<html lang="zh-CN" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Pet Chat</title>
-    <link rel="stylesheet" href="css/pet.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/chat.css" />
+    <link rel="stylesheet" href="css/panels.css" />
 </head>
-<body class="pet-mode" style="-webkit-app-region: no-drag">
+<body style="-webkit-app-region: no-drag">
 
-    <!-- ====== 聊天区 ====== -->
-    <div class="chat-window" id="chat-window">
-        <!-- 标题栏（拖拽把手 / 窗口拖拽区域） -->
-        <div class="chat-header" id="chat-header">
-            <span>💬 聊天 · 记忆: <span id="mem-count">0</span></span>
-            <div class="chat-header-btns">
-                <button id="btn-chat-close" title="隐藏窗口">_</button>
-            </div>
+<!-- ====== 聊天窗口 ====== -->
+<div class="chat-window" id="chat-window">
+
+    <!-- 顶部栏 -->
+    <div class="chat-header" id="chat-header">
+        <div class="header-left">
+            <div class="char-icon" id="char-icon">&#x1F380;</div>
+            <span class="char-name" id="btn-model-name">大鳳</span>
+            <span class="char-type" id="char-type"></span>
         </div>
-
-        <!-- 功能按钮栏 -->
-        <div class="chat-toolbar">
-            <button id="btn-new-chat" title="新对话">💬 新对话</button>
-            <span class="tb-sep"></span>
-            <button id="btn-settings" title="设置">⚙ 设置</button>
-            <button id="btn-memories" title="记忆管理">📋 记忆</button>
-            <button id="btn-reset" title="清除所有记忆">🗑 清除</button>
-            <span class="tb-sep"></span>
-            <button id="btn-model-prev">◀</button>
-            <button id="btn-model-name" class="model-name-btn">dafeng</button>
-            <button id="btn-model-next">▶</button>
-            <span class="tb-spacer"></span>
-            <button id="btn-minimize" title="最小化">_</button>
-            <button id="btn-quit" title="退出">✕</button>
-        </div>
-
-        <!-- 聊天记录 -->
-        <div class="chat-area" id="chat-area">
-            <div class="message system">⚡ 点击 ⚙ 设置 配置 API Key</div>
-        </div>
-
-        <!-- 快捷回复 -->
-        <div class="quick-replies" id="quick-replies">
-            <button id="btn-refresh-replies" title="换一批">🔄</button>
-        </div>
-
-        <!-- 输入区 -->
-        <div class="input-area">
-            <button id="btn-voice" title="语音输入" class="voice-btn">🎤</button>
-            <button id="btn-mute" title="静音" class="mute-btn">🔊</button>
-            <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="100" title="音量" />
-            <input type="text" id="chat-input" placeholder="说点什么..." />
-            <button class="send-btn" id="send-btn">发送</button>
-        </div>
-
-        </div>
-
-        <!-- 记忆管理面板 -->
-    <div class="mem-overlay" id="mem-overlay" style="display:none;">
-        <div class="mem-panel">
-            <div class="mem-header">
-                <h3>🧠 记忆管理</h3>
-                <button id="mem-btn-close" class="mem-close">✕</button>
-            </div>
-            <div class="mem-list" id="mem-list"></div>
-            <div class="mem-edit-area hidden" id="mem-edit-area">
-                <textarea id="mem-edit-input" maxlength="200" placeholder="修改记忆内容..."></textarea>
-                <div class="mem-edit-actions">
-                    <button id="mem-btn-save" class="btn-mem-save">保存</button>
-                    <button id="mem-btn-cancel" class="btn-mem-cancel">取消</button>
-                </div>
-            </div>
+        <div class="chat-header-btns">
+            <button id="btn-memories" title="记忆管理">&#x1F9E0;</button>
+            <button id="btn-settings" title="设置">&#x2699;</button>
+            <button id="btn-chat-close" title="隐藏窗口">&#x2715;</button>
         </div>
     </div>
 
-    <!-- 设置面板 -->
-    <div class="setup-overlay" id="setup-overlay" style="display:none">
-        <div class="setup-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; -webkit-app-region: drag;">
-                <h2 style="margin: 0;">🐱 AI Pet 设置</h2>
-                <button id="setup-btn-close" title="关闭"
-                        class="setup-close-btn">✕</button>
-            </div>
-            <p class="subtitle" id="setup-subtitle">首次使用，请配置 LLM 连接</p>
-            <div id="setup-step-llm">
-                <label>API 提供商</label>
-                <select id="setup-provider">
-                    <option value="deepseek">DeepSeek</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="custom">自定义</option>
-                </select>
-                <label>API Key</label>
-                <div class="key-input-row">
-                    <input type="password" id="setup-apikey" placeholder="sk-..." />
-                    <button type="button" class="toggle-key-btn" id="btn-toggle-key">👁</button>
-                </div>
-                <div id="setup-url-group" class="hidden">
-                    <label>API 地址</label>
-                    <input type="text" id="setup-baseurl" placeholder="https://api.openai.com/v1" />
-                </div>
-                <label>模型</label>
-                <select id="setup-model"></select>
-                <button id="setup-btn-test" class="btn-secondary">🔌 测试连接</button>
-                <div class="test-result" id="setup-test-result"></div>
-                <div class="setup-divider"></div>
-                <button id="setup-btn-update" class="btn-secondary">🔍 检查更新</button>
-                <div class="test-result" id="setup-update-result"></div>
-                <div class="setup-divider"></div>
-                <label class="checkbox-label">
-                    <input type="checkbox" id="setup-ontop" /> 窗口置顶
-                </label>
-                <label class="checkbox-label">
-                    <input type="checkbox" id="setup-autostart" /> 开机自启
-                </label>
-                <label>主题</label>
-                <select id="setup-theme">
-                    <option value="dark">深色</option>
-                    <option value="light">浅色</option>
-                    <option value="system">跟随系统</option>
-                </select>
-                <button id="setup-btn-save" disabled>💾 保存并开始</button>
-                <div class="error-msg" id="setup-error"></div>
+    <!-- 对话区 -->
+    <div class="chat-area" id="chat-area">
+        <div class="msg-row system"><div class="msg-body">配置 API Key 后开始聊天</div></div>
+    </div>
+
+    <!-- 快捷回复 -->
+    <div class="quick-replies" id="quick-replies">
+        <button id="btn-refresh-replies" title="换一批">&#x1F504;</button>
+    </div>
+
+    <!-- 输入区 -->
+    <div class="input-area">
+        <button id="btn-mute" class="mute-btn" title="静音">&#x1F50A;</button>
+        <input type="text" id="chat-input" placeholder="说点什么..." />
+        <button class="send-btn" id="send-btn">&#x25B6;</button>
+    </div>
+
+</div>
+
+<!-- ====== 记忆面板 ====== -->
+<div class="overlay hidden" id="mem-overlay">
+    <div class="panel mem-panel">
+        <div class="panel-header">
+            <h2>&#x1F9E0; 记忆管理</h2>
+            <button class="panel-close" id="mem-btn-close">&#x2715;</button>
+        </div>
+        <div class="mem-add-row">
+            <input type="text" id="mem-add-input" maxlength="200" placeholder="添加新记忆..." />
+            <select id="mem-add-category">
+                <option value="episodic">情境</option>
+                <option value="preference">偏好</option>
+                <option value="core">核心</option>
+            </select>
+            <button id="mem-btn-add" class="btn btn-primary" style="padding:6px 10px;">+</button>
+        </div>
+        <div class="mem-list" id="mem-list"></div>
+        <div style="margin-top:10px;text-align:right;">
+            <button id="mem-btn-clear" class="btn btn-secondary" style="font-size:11px;">&#x1F5D1; 清除全部</button>
+        </div>
+        <div class="hidden" id="mem-edit-area" style="margin-top:10px;">
+            <textarea id="mem-edit-input" maxlength="200" placeholder="修改记忆内容..." style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-input);color:var(--text-primary);font-size:13px;resize:none;height:50px;outline:none;"></textarea>
+            <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end;">
+                <button id="mem-btn-save" class="btn btn-primary" style="font-size:12px;">保存</button>
+                <button id="mem-btn-cancel" class="btn btn-secondary" style="font-size:12px;">取消</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- 变体选择菜单 -->
-    <div id="variant-menu" class="variant-menu" style="display:none;"></div>
+<!-- ====== 设置面板 ====== -->
+<div class="overlay hidden" id="setup-overlay">
+    <div class="panel setup-panel">
+        <div class="panel-header">
+            <h2>&#x2699; 设置</h2>
+            <button class="panel-close" id="setup-btn-close">&#x2715;</button>
+        </div>
+        <div id="setup-step-llm">
+            <div class="setup-section">
+                <div class="setup-title">&#x1F916; LLM 连接</div>
+                <div class="setup-row"><label>提供商</label><select id="setup-provider"><option value="deepseek">DeepSeek</option><option value="openai">OpenAI</option><option value="custom">自定义</option></select></div>
+                <div class="setup-row key-row"><input type="password" id="setup-apikey" placeholder="sk-..." /><button class="btn btn-secondary" id="btn-toggle-key" style="width:36px;">&#x1F441;</button></div>
+                <div class="setup-row hidden" id="setup-url-group"><label>API地址</label><input type="text" id="setup-baseurl" placeholder="https://api.openai.com/v1" /></div>
+                <div class="setup-row"><label>模型</label><select id="setup-model"></select></div>
+                <button id="setup-btn-test" class="btn btn-secondary btn-full">&#x1F50C; 测试连接</button>
+                <div style="font-size:12px;margin-top:6px;min-height:18px;" id="setup-test-result"></div>
+            </div>
+            <div class="setup-section">
+                <div class="setup-title">&#x1F3AE; 互动</div>
+                <div class="setup-row"><label>触摸语音</label><label class="toggle"><input type="checkbox" id="setup-touch-audio" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div>
+                <div class="setup-row"><label>触摸对话</label><label class="toggle"><input type="checkbox" id="setup-touch-reply" checked /><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div>
+                <div class="setup-row"><label>音量 <span id="setup-vol-val">100</span>%</label><input type="range" id="setup-volume" min="0" max="100" value="100" /></div>
+            </div>
+            <div class="setup-section">
+                <div class="setup-title">&#x1F4FA; 系统</div>
+                <div class="setup-row"><label>窗口置顶</label><label class="toggle"><input type="checkbox" id="setup-ontop" /><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div>
+                <div class="setup-row"><label>开机自启</label><label class="toggle"><input type="checkbox" id="setup-autostart" /><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div>
+                <div class="setup-row"><label>主题</label><select id="setup-theme"><option value="dark">深色</option><option value="light">浅色</option></select></div>
+            </div>
+            <button id="setup-btn-save" class="btn btn-primary btn-full" disabled>&#x1F4BE; 保存</button>
+            <button id="setup-btn-update" class="btn btn-secondary btn-full">&#x1F50D; 检查更新</button>
+            <div style="font-size:12px;margin-top:4px;min-height:18px;" id="setup-update-result"></div>
+            <div style="color:var(--primary);font-size:12px;margin-top:6px;" id="setup-error"></div>
+        </div>
+    </div>
+</div>
 
-    <script src="js/bridge.js"></script>
-    <script src="js/common.js"></script>
-    <script src="js/message.js"></script>
-    <script src="js/idle.js"></script>
-    <script src="js/voice.js"></script>
-    <script src="js/notify.js"></script>
-    <script src="js/memory-panel.js"></script>
-    <script src="js/setup-ui.js"></script>
-    <script src="js/chat.js"></script>
+<!-- ====== 日记面板 ====== -->
+<div class="overlay hidden" id="diary-overlay">
+    <div class="panel diary-panel">
+        <div class="panel-header">
+            <h2>&#x1F4D6; 日记本</h2>
+            <button class="panel-close" id="diary-btn-close">&#x2715;</button>
+        </div>
+        <div id="diary-list" style="max-height:50vh;overflow-y:auto;"></div>
+        <button id="diary-btn-generate" class="btn btn-primary btn-full">&#x270D; 写日记</button>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 模型菜单 -->
+<div class="model-card hidden" id="model-menu"></div>
+
+<script src="js/bridge.js"></script>
+<script src="js/haptics.js"></script>
+<script src="js/common.js"></script>
+<script src="js/message.js"></script>
+<script src="js/idle.js"></script>
+<script src="js/notify.js"></script>
+<script src="js/memory-panel.js"></script>
+<script src="js/setup-ui.js"></script>
+<script src="js/chat.js"></script>
 </body>
 </html>

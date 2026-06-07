@@ -56,8 +56,8 @@ function bindPetEvents() {
             if (zone.motion && typeof playMotion === "function") {
                 playMotion(zone.motion);
             }
-            if (zone.audio) playZoneAudio(zone.audio);
-            petAction(zone.action, currentThreadId);
+            if (_touchAudioEnabled && zone.audio) playZoneAudio(zone.audio);
+            if (_touchReplyEnabled) petAction(zone.action, currentThreadId);
         }
     });
 
@@ -82,8 +82,8 @@ function bindPetEvents() {
             if (_dragState.zone.motion && typeof playMotion === "function") {
                 playMotion(_dragState.zone.motion);
             }
-            if (_dragState.zone.audio) playZoneAudio(_dragState.zone.audio);
-            petAction("drag", currentThreadId);
+            if (_touchAudioEnabled && _dragState.zone.audio) playZoneAudio(_dragState.zone.audio);
+            if (_touchReplyEnabled) petAction("drag", currentThreadId);
         }
     });
 

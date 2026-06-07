@@ -1,0 +1,73 @@
+/* ================================================================
+   base.css — CSS变量 + 主题系统 + reset
+   ================================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --primary: #FF85A2;
+    --primary-light: #FFB6C8;
+    --primary-dark: #E0557F;
+    --primary-glow: rgba(255, 133, 162, 0.3);
+    --bg-surface: rgba(22, 18, 32, 0.88);
+    --bg-elevated: rgba(32, 26, 48, 0.94);
+    --bg-input: rgba(255, 255, 255, 0.06);
+    --bg-hover: rgba(255, 255, 255, 0.08);
+    --text-primary: #F0E8F4;
+    --text-secondary: rgba(240, 232, 244, 0.6);
+    --text-muted: rgba(240, 232, 244, 0.35);
+    --bubble-user: rgba(40, 35, 55, 0.85);
+    --bubble-pet: rgba(255, 133, 162, 0.12);
+    --bubble-system: rgba(255, 255, 255, 0.04);
+    --border-subtle: rgba(255, 133, 162, 0.08);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-focus: var(--primary);
+    --radius-sm: 8px;
+    --radius: 13px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --scrollbar: rgba(255, 255, 255, 0.06);
+    --font: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] {
+    --bg-surface: rgba(248, 246, 252, 0.92);
+    --bg-elevated: rgba(255, 255, 255, 0.94);
+    --bg-input: rgba(0, 0, 0, 0.04);
+    --bg-hover: rgba(0, 0, 0, 0.04);
+    --text-primary: #1a1428;
+    --text-secondary: rgba(26, 20, 40, 0.5);
+    --text-muted: rgba(26, 20, 40, 0.3);
+    --bubble-user: rgba(255, 133, 162, 0.12);
+    --bubble-pet: rgba(240, 240, 248, 0.9);
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border: rgba(0, 0, 0, 0.1);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    --scrollbar: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="shimakaze"] {
+    --primary: #64D8FF;
+    --primary-light: #A0E8FF;
+    --primary-dark: #3DA8D4;
+    --primary-glow: rgba(100, 216, 255, 0.3);
+    --bubble-pet: rgba(100, 216, 255, 0.12);
+    --border-subtle: rgba(100, 216, 255, 0.08);
+}
+
+body {
+    font-family: var(--font);
+    background: transparent;
+    color: var(--text-primary);
+    height: 100vh; width: 100vw;
+    position: relative; overflow: hidden;
+    user-select: none; font-size: 13px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 2px; }

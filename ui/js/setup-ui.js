@@ -4,8 +4,10 @@
  * 依赖：bridge.js, common.js
  */
 function showSetup(isEdit) {
-    const ov = document.getElementById("setup-overlay"); ov.style.display = "flex";
-    document.getElementById("setup-subtitle").textContent = isEdit ? "修改设置" : "首次使用，请配置 LLM 连接";
+    var ov = document.getElementById("setup-overlay");
+    ov.classList.remove("hidden");
+    var sub = document.getElementById("setup-subtitle");
+    if (sub) sub.textContent = isEdit ? "修改设置" : "首次使用，请配置 LLM 连接";
     document.getElementById("setup-test-result").innerHTML = "";
     document.getElementById("setup-error").textContent = "";
     document.getElementById("setup-btn-save").disabled = true;
@@ -17,11 +19,18 @@ function showSetup(isEdit) {
         document.getElementById("setup-ontop").checked = savedSettings.on_top || false;
         document.getElementById("setup-autostart").checked = savedSettings.autostart || false;
         document.getElementById("setup-theme").value = savedSettings.theme || "dark";
+        document.getElementById("setup-touch-audio").checked = savedSettings.touch_audio !== false;
+        document.getElementById("setup-touch-reply").checked = savedSettings.touch_reply !== false;
+        document.getElementById("setup-volume").value = savedSettings.volume != null ? Math.round(savedSettings.volume * 100) : 100;
     } else {
         document.getElementById("setup-apikey").value = "";
         document.getElementById("setup-ontop").checked = false;
         document.getElementById("setup-autostart").checked = false;
+        document.getElementById("setup-touch-audio").checked = true;
+        document.getElementById("setup-touch-reply").checked = true;
+        document.getElementById("setup-volume").value = 100;
     }
+    document.getElementById("setup-vol-val").textContent = document.getElementById("setup-volume").value;
     onProviderChange();
     if (isEdit && savedSettings && savedSettings.api_key) {
         connectionTested = true;
@@ -41,7 +50,9 @@ function showSetup(isEdit) {
     }
 }
 
-function hideSetup() { document.getElementById("setup-overlay").style.display = "none"; }
+function hideSetup() {
+    document.getElementById("setup-overlay").classList.add("hidden");
+}
 
 function onProviderChange() {
     const s = document.getElementById("setup-provider");
@@ -69,6 +80,9 @@ function getCurrentSettings() {
         on_top: document.getElementById("setup-ontop").checked,
         autostart: document.getElementById("setup-autostart").checked,
         theme: document.getElementById("setup-theme").value,
+        touch_audio: document.getElementById("setup-touch-audio").checked,
+        touch_reply: document.getElementById("setup-touch-reply").checked,
+        volume: parseInt(document.getElementById("setup-volume").value) / 100,
     };
 }
 
@@ -78,8 +92,15 @@ async function doTestConnection() {
     b.disabled = true; b.textContent = "测试中..."; r.innerHTML = "";
     const s = getCurrentSettings(), res = await testConnection(s);
     b.disabled = false; b.textContent = "🔌 测试连接";
-    if (res.ok) { r.innerHTML = `<span class="test-result success">✓ 连接成功！回复: "${res.test_reply}"</span>`; connectionTested = true; document.getElementById("setup-btn-save").disabled = false; }
-    else { r.innerHTML = `<span class="test-result error">✗ 连接失败: ${res.error}</span>`; connectionTested = false; document.getElementById("setup-btn-save").disabled = true; }
+    if (res.ok) {
+        r.innerHTML = `<span class="test-result success">连接成功！回复: "${esc(res.test_reply || '')}"</span>`;
+        connectionTested = true;
+        document.getElementById("setup-btn-save").disabled = false;
+    } else {
+        r.innerHTML = `<span class="test-result error">连接失败: ${esc(res.error || '')}</span>`;
+        connectionTested = false;
+        document.getElementById("setup-btn-save").disabled = true;
+    }
 }
 
 async function doCheckUpdate() {
@@ -88,10 +109,10 @@ async function doCheckUpdate() {
     btn.disabled = true; btn.textContent = "检查中..."; result.innerHTML = "";
     const res = await checkUpdate();
     btn.disabled = false; btn.textContent = "🔍 检查更新";
-    if (!res.ok) { result.innerHTML = `<span class="test-result error">检查失败: ${res.error}</span>`; return; }
+    if (!res.ok) { result.innerHTML = `<span class="test-result error">检查失败: ${esc(res.error || '')}</span>`; return; }
     if (res.has_update) {
-        result.innerHTML = `<span class="test-result success">🎉 发现新版本 <b>${res.latest}</b>！（当前 ${res.current}）</span>
-        <a href="${res.url}" target="_blank">👉 前往下载</a>`;
+        result.innerHTML = `<span class="test-result success">发现新版本 <b>${esc(res.latest || '')}</b>！（当前 ${esc(res.current || '')}）</span>
+        <a href="${res.url ? res.url.replace(/^javascript:/i, '') : '#'}" target="_blank" rel="noopener">前往下载</a>`;
     } else {
         result.innerHTML = `<span class="test-result success">✓ 已是最新版本 (${res.current})</span>`;
     }
@@ -100,7 +121,12 @@ async function doCheckUpdate() {
 async function doSaveSettings() {
     if (!connectionTested) { document.getElementById("setup-error").textContent = "请先测试连接"; return; }
     const b = document.getElementById("setup-btn-save"); b.disabled = true; b.textContent = "保存中..."; document.getElementById("setup-error").textContent = "";
-    const s = getCurrentSettings(); savedSettings = s;
+    const s = getCurrentSettings();
+    _touchAudioEnabled = s.touch_audio;
+    _touchReplyEnabled = s.touch_reply;
+    _audioVolume = s.volume;
+    saveAudioState();
+    savedSettings = s;
     const res = await saveSettings(s);
     if (res.ok) { hideSetup(); document.body.classList.remove("pet-mode"); applyTheme(s.theme || "dark"); updateMemoryCount(0); setAutoStart(s.autostart || false); }
     else { document.getElementById("setup-error").textContent = "保存失败：" + (res.error || "未知错误"); b.disabled = false; b.textContent = "💾 保存并开始"; }

@@ -1,59 +1,89 @@
 """
-统一日志配置
-=============
-输出到 stdout + 文件（%APPDATA%/AI-Pet/logs/）
-文件按日自动轮转，不依赖标准库 TimedRotatingFileHandler 的复杂配置。
+结构化日志 —— 模块级别独立文件 + 集中错误日志
+==============================================
+文件输出:
+  %APPDATA%/AI-Pet/logs/pet_<module>.log  — 按模块分文件
+  %APPDATA%/AI-Pet/logs/pet_error.log     — 所有 ERROR+ 集中
+控制台: 实时输出 DEBUG+
+所有 except 块必须带 exc_info=True
 """
 import os
 import logging
+import threading
 from datetime import datetime
 
+from config import STORAGE_DIR_NAME
+
 _loggers: dict[str, logging.Logger] = {}
+_loggers_lock = threading.Lock()
+_error_handler: logging.Handler | None = None
 
 
-def _get_log_dir() -> str:
-    base = os.path.join(
-        os.getenv("APPDATA") or os.path.expanduser("~"), "AI-Pet"
-    )
-    log_dir = os.path.join(base, "logs")
-    os.makedirs(log_dir, exist_ok=True)
-    return log_dir
+def _get_log_dir():
+    base = os.path.join(os.getenv("APPDATA") or os.path.expanduser("~"), STORAGE_DIR_NAME)
+    d = os.path.join(base, "logs")
+    os.makedirs(d, exist_ok=True)
+    return d
 
 
-class _DateRotatingFileHandler(logging.Handler):
-    def __init__(self, log_dir: str, fmt: logging.Formatter) -> None:
+class _ModuleFileHandler(logging.Handler):
+    """每个模块独立日志文件, 按日轮转"""
+    def __init__(self, module_name: str, fmt: logging.Formatter):
         super().__init__()
-        self._log_dir = log_dir
+        self._dir = _get_log_dir()
+        self._module = module_name
         self._fmt = fmt
-        self._current_date: str = ""
-        self._file_handler: logging.FileHandler | None = None
+        self._current_date = ""
+        self._fh: logging.FileHandler | None = None
+        self.setLevel(logging.DEBUG)
 
-    def _ensure_handler(self) -> None:
+    def _path(self):
         today = datetime.now().strftime("%Y%m%d")
-        if today == self._current_date and self._file_handler is not None:
+        return os.path.join(self._dir, f"pet_{self._module}_{today}.log")
+
+    def _ensure(self):
+        today = datetime.now().strftime("%Y%m%d")
+        if today == self._current_date and self._fh is not None:
             return
-        if self._file_handler:
-            self._file_handler.close()
-        log_file = os.path.join(self._log_dir, f"pet_{today}.log")
-        self._file_handler = logging.FileHandler(log_file, encoding="utf-8")
-        self._file_handler.setLevel(logging.DEBUG)
-        self._file_handler.setFormatter(self._fmt)
+        if self._fh:
+            self._fh.close()
+        self._fh = logging.FileHandler(self._path(), encoding="utf-8")
+        self._fh.setLevel(logging.DEBUG)
+        self._fh.setFormatter(self._fmt)
         self._current_date = today
 
-    def emit(self, record: logging.LogRecord) -> None:
-        self._ensure_handler()
-        if self._file_handler:
-            self._file_handler.emit(record)
+    def emit(self, record):
+        self._ensure()
+        if self._fh:
+            self._fh.emit(record)
 
-    def close(self) -> None:
-        if self._file_handler:
-            self._file_handler.close()
+    def close(self):
+        if self._fh:
+            self._fh.close()
         super().close()
 
 
+def _error_path():
+    return os.path.join(_get_log_dir(), "pet_error.log")
+
+
+def _ensure_error_handler():
+    global _error_handler
+    if _error_handler is not None:
+        return
+    fmt = logging.Formatter(
+        "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    _error_handler = logging.FileHandler(_error_path(), encoding="utf-8")
+    _error_handler.setLevel(logging.ERROR)
+    _error_handler.setFormatter(fmt)
+
+
 def get_logger(name: str) -> logging.Logger:
-    if name in _loggers:
-        return _loggers[name]
+    with _loggers_lock:
+        if name in _loggers:
+            return _loggers[name]
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
@@ -64,17 +94,21 @@ def get_logger(name: str) -> logging.Logger:
             "[%(asctime)s] [%(name)s] %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
-
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(logging.DEBUG)
-        stream_handler.setFormatter(fmt)
-        logger.addHandler(stream_handler)
+        stream = logging.StreamHandler()
+        stream.setLevel(logging.DEBUG)
+        stream.setFormatter(fmt)
+        logger.addHandler(stream)
 
         try:
-            file_handler = _DateRotatingFileHandler(_get_log_dir(), fmt)
-            logger.addHandler(file_handler)
+            module = name.split(".")[-1] if "." in name else name
+            logger.addHandler(_ModuleFileHandler(module, fmt))
         except Exception:
-            pass
+            import sys
+            print(f"[logger] 文件处理器创建失败: {name}", file=sys.stderr)
 
-    _loggers[name] = logger
+        _ensure_error_handler()
+        logger.addHandler(_error_handler)
+
+    with _loggers_lock:
+        _loggers[name] = logger
     return logger

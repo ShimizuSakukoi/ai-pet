@@ -143,6 +143,33 @@ async function deleteMemory(mid) {
     catch (_) { return { ok: false }; }
 }
 
+async function addMemory(content, layer) {
+    try { return await pywebview.api.add_memory(content, layer || "episodic"); }
+    catch (_) { return { ok: false }; }
+}
+
+async function promoteMemory(mid) {
+    try { return await pywebview.api.promote_memory(mid); }
+    catch (_) { return { ok: false }; }
+}
+
+async function deleteAllMemories() {
+    try { return await pywebview.api.delete_all_memories(); }
+    catch (_) { return { ok: false }; }
+}
+
+// ====== 日记 ======
+
+async function generateDiary() {
+    try { return await pywebview.api.generate_diary(); }
+    catch (_) { return { ok: false, error: "连接失败" }; }
+}
+
+async function getDiaryEntries() {
+    try { return await pywebview.api.get_diary_entries(); }
+    catch (_) { return { entries: [] }; }
+}
+
 // ====== 模型 ======
 
 async function getModels() {

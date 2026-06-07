@@ -94,6 +94,8 @@ class InteractionHandler:
             "\"一起去玩吧\" — 用户在邀请\n\n"
             "直接返回JSON数组：[\"句子1\", \"句子2\", ...]"
         )
+        if self._graph is None or self._graph.llm is None:
+            return self._fallback_quick_replies()
         try:
             response = self._graph.llm.invoke([SystemMessage(content=prompt)])
             raw = response.content.strip()
@@ -102,5 +104,18 @@ class InteractionHandler:
             if isinstance(replies, list) and len(replies) > 0:
                 return [str(r)[:20] for r in replies[:6]]
         except Exception:
-            pass
-        return ["在干嘛？", "摸摸头", "饿了吗", "讲个笑话", "不理你了", "晚安"]
+            logger.warning("快速回复生成失败", exc_info=True)
+        return self._fallback_quick_replies()
+
+    def _fallback_quick_replies(self) -> list:
+        interactions = load_interactions(self.model_name, self._base_name)
+        prompts = interactions.get("prompts", DEFAULT_PROMPTS)
+        replies = []
+        for key in ("touch", "welcome", "idle"):
+            for p in prompts.get(key, []):
+                t = p.strip()
+                if t and t not in replies and len(replies) < 6:
+                    replies.append(t)
+        if len(replies) < 4:
+            replies.extend(["在干嘛？", "摸摸头", "讲个笑话", "晚安"])
+        return replies[:6]
